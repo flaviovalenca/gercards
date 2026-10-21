@@ -265,36 +265,34 @@ var dlabChartlist = function() {
             success: function(data) {
 
                 if (data.ERRO === "Token Expirado") {
-                    window.location.href = 'login.asp';
+                    window.location.reload();
                     return;
                 }
 
                 try {
 
-                var registrosassinados = JSON.parse(data.REGISTROASSINADO);
-                var registrosnaoassinados = JSON.parse(data.REGISTRONAOASSINADO);
-                var registrosrejeitados = JSON.parse(data.REGISTROREJEITADO);
-                var registrositensassinados = JSON.parse(data.REGISTROITEMASSINADO);
-                var registrositensnaoassinados = JSON.parse(data.REGISTROITEMNAOASSINADO);
-                var registrositensrejeitados = JSON.parse(data.REGISTROITEMREJEITADO);
+                var registros = JSON.parse(data.REGISTROS).REGISTROS;
+                var registrosassinados = registros.filter(function(item) { return item.STATUS_ANALISE === 'A'; });
+                var registrosnaoassinados = registros.filter(function(item) { return item.STATUS_ANALISE === 'N'; });
+                var registrosrejeitados = registros.filter(function(item) { return item.STATUS_ANALISE === 'R'; });
 
-                var seriesassinados = getSeries(registrosassinados.REGISTROS);
-                var seriesnaoassinados = getSeries(registrosnaoassinados.REGISTROS);
-                var seriesrejeitados = getSeries(registrosrejeitados.REGISTROS);
-                var coresassinados = generateColorArray(registrosassinados.REGISTROS.length);
-                var coresnaoassinados = generateColorArray(registrosnaoassinados.REGISTROS.length);
-                var coresrejeitados = generateColorArray(registrosrejeitados.REGISTROS.length);
-                var totalassinado = getTotal(registrosassinados.REGISTROS);
-                var totalnaoassinado = getTotal(registrosnaoassinados.REGISTROS);
-                var totalrejeitado = getTotal(registrosrejeitados.REGISTROS);
+                var seriesassinados = getSeries(registrosassinados);
+                var seriesnaoassinados = getSeries(registrosnaoassinados);
+                var seriesrejeitados = getSeries(registrosrejeitados);
+                var coresassinados = generateColorArray(registrosassinados.length);
+                var coresnaoassinados = generateColorArray(registrosnaoassinados.length);
+                var coresrejeitados = generateColorArray(registrosrejeitados.length);
+                var totalassinado = getTotal(registrosassinados);
+                var totalnaoassinado = getTotal(registrosnaoassinados);
+                var totalrejeitado = getTotal(registrosrejeitados);
 
                 pieChartAssinado(seriesassinados, coresassinados);
                 pieChartNaoAssinado(seriesnaoassinados, coresnaoassinados);
                 pieChartRejeitado(seriesrejeitados, coresrejeitados);
                 
-                $('#divitemassinado').html(getItensSeries(registrositensassinados.REGISTROS, coresassinados, totalassinado));
-                $('#divitemnaoassinado').html(getItensSeries(registrositensnaoassinados.REGISTROS, coresnaoassinados, totalnaoassinado));
-                $('#divitemrejeitado').html(getItensSeries(registrositensrejeitados.REGISTROS, coresrejeitados, totalrejeitado));
+                $('#divitemassinado').html(getItensSeries(registrosassinados, coresassinados, totalassinado));
+                $('#divitemnaoassinado').html(getItensSeries(registrosnaoassinados, coresnaoassinados, totalnaoassinado));
+                $('#divitemrejeitado').html(getItensSeries(registrosrejeitados, coresrejeitados, totalrejeitado));
 
                 $('#divGraficoAssinado').unblock();
                 $('#divGraficoNaoAssinado').unblock();

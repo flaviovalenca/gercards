@@ -52,7 +52,7 @@ function carregaempresa(idSelect) {
         success: function(data) {
 
             if ((data.ERRO) == "Token Expirado") {
-                window.location.href = 'login.asp';
+                window.location.reload();
                 return;
             }
 
@@ -85,7 +85,7 @@ function carreganavio(idSelect) {
         success: function(data) {
 
             if ((data.ERRO) == "Token Expirado") {
-                window.location.href = 'login.asp';
+                window.location.reload();
                 return;
             }
 
@@ -329,15 +329,14 @@ $(document).ready(function () {
             success: function(data) {            
 
                 if ((data.ERRO) == "Token Expirado") {
-                    window.location.href = 'login.asp';
+                    window.location.reload();
                     return;
                 }
 
                 var registros = JSON.parse(data.REGISTROS);
                 
                 var tabela = $('#tbCards').DataTable();
-                tabela.clear().draw();
-                var index = 0;
+                var linhas = [];
     
                 $.each(registros.REGISTROS, function (i, item) {
                     
@@ -355,7 +354,7 @@ $(document).ready(function () {
                         idcards = item.ID_CARDS;
                     }
                 
-                    $('#tbCards').DataTable().row.add([
+                    linhas.push([
                         item.ID,
                         idcards,
                         item.NUMERO_CONTRATO + '<br>' + item.DATA_INICIO + '<BR>' + item.DATA_TERMINO,                    
@@ -368,10 +367,11 @@ $(document).ready(function () {
                         assinado,
                         item.DESCRICAO,
                         status                        
-                    ]).draw();
-
-                    index ++;
+                    ]);
                 });
+
+                tabela.clear();
+                tabela.rows.add(linhas).draw();
 
                 $('#h2totalassinado').html(data.TOTALASSINADO);
                 $('#h2totalnassinado').html(data.TOTALNAOASSINADO);
@@ -479,7 +479,7 @@ $(document).ready(function () {
                 success: function(data) {
 
                     if ((data.ERRO) == "Token Expirado") {
-                        window.location.href = 'login.asp';
+                        window.location.reload();
                         return;
                     }
 

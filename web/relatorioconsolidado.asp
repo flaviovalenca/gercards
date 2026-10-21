@@ -21,7 +21,14 @@
     csrf_token = GenerateCSRFToken()
     Session("csrf_token") = csrf_token
 
-	if session("PERFIL") <> "A" then
+	Dim perfilAcesso
+	perfilAcesso = UCase(CStr(Session("PERFIL") & ""))
+	perfilAcesso = Replace(perfilAcesso, " ", "")
+	perfilAcesso = Replace(perfilAcesso, vbTab, "")
+	perfilAcesso = Replace(perfilAcesso, vbCr, "")
+	perfilAcesso = Replace(perfilAcesso, vbLf, "")
+	perfilAcesso = Replace(perfilAcesso, ChrW(160), "")
+	if perfilAcesso <> "A" then
         response.redirect "mantercards.asp"
         response.end
     end if
@@ -604,8 +611,8 @@
     <script src="./js/jquery/jspdf.min.js"></script>
     <script src="./js/jquery/html2canvas.min.js"></script>
 
-	<script src="./js/grafico.js?v=1.0.2"></script>
-	<script src="./js/relatorioconsolidado.js?v=1.0.14"></script>	
+	<script src="./js/grafico.js?v=1.0.4"></script>
+	<script src="./js/relatorioconsolidado.js?v=1.0.16"></script>
 	
 	</form>
 	

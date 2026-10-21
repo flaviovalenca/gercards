@@ -1288,19 +1288,13 @@ if (funcao = "getcardsconsolidado") then
 	' Usa uma cláusula padrão para fechar os WHEREs    
     incluiand = " 1=1 AND "
 
-	' Total assinado	
-	call BD.AbreQueryDireto("SELECT COUNT(*) AS TOTAL " & qrycards &  " AND ENVELOPE_ID IS NOT NULL")							
-	objJson("TOTALASSINADO") = BD.valor("TOTAL")		
-	Call BD.fechaQuery
-	
-	' Total não assinado
-	call BD.AbreQueryDireto("SELECT COUNT(*) AS TOTAL " & qrycards  &  " AND ENVELOPE_ID IS NULL AND DATA_REJEICAO IS NULL")		
-	objJson("TOTALNAOASSINADO") = BD.valor("TOTAL")	
-	Call BD.fechaQuery
-	
-	' Total Rejeitado
-	call BD.AbreQueryDireto("SELECT COUNT(*) AS TOTAL " & qrycards  & " AND DATA_REJEICAO IS NOT NULL")	
-	objJson("TOTALREJEITADO") = BD.valor("TOTAL")	
+	' Calcula os três totais em uma única leitura da tabela
+	call BD.AbreQueryDireto("SELECT COUNT(CASE WHEN ENVELOPE_ID IS NOT NULL THEN 1 END) AS TOTALASSINADO, " & _
+		"COUNT(CASE WHEN ENVELOPE_ID IS NULL AND DATA_REJEICAO IS NULL THEN 1 END) AS TOTALNAOASSINADO, " & _
+		"COUNT(CASE WHEN DATA_REJEICAO IS NOT NULL THEN 1 END) AS TOTALREJEITADO " & qrycards)
+	objJson("TOTALASSINADO") = BD.valor("TOTALASSINADO")
+	objJson("TOTALNAOASSINADO") = BD.valor("TOTALNAOASSINADO")
+	objJson("TOTALREJEITADO") = BD.valor("TOTALREJEITADO")
 	Call BD.fechaQuery
 
 	' Registros
@@ -1328,7 +1322,6 @@ end if
 if (funcao = "getcardsgraficoconsolidado") then
 	
 	qrycards = ""
-    qrycardsitem = ""
 
     qrycards = qrycards & " SELECT STATUS_ANALISE, CTDI.DESCRICAO, COUNT(*) AS TOTAL "
     qrycards = qrycards & " FROM GERCARDS.CARDS C "
@@ -1339,82 +1332,35 @@ if (funcao = "getcardsgraficoconsolidado") then
     qrycards = qrycards & " INNER JOIN GERCARDS.CARDS_EMPRESA CE ON EN.ID_EMPRESA = CE.ID "
     qrycards = qrycards & " INNER JOIN GERCARDS.CARDS_NAVIO CN ON EN.ID_NAVIO = CN.ID "
     qrycards = qrycards & " LEFT JOIN GERCARDS.CARDS_UNIDADE CU ON C.ID_UNIDADE = CU.ID "
-    qrycards = qrycards & " WHERE "
-
-    qrycardsitem = qrycardsitem & " SELECT ctdi.DESCRICAO, COUNT(*) AS TOTAL "
-    qrycardsitem = qrycardsitem & " FROM GERCARDS.CARDS C "
-    qrycardsitem = qrycardsitem & " INNER JOIN GERCARDS.CARDS_TIPO_ID_TIPO_DETALHE_ID ctitdi ON C.ID_CARDS_TIPO_ID_DET_ID = CTITDI.ID "
-    qrycardsitem = qrycardsitem & " INNER JOIN GERCARDS.CARDS_TIPO_ID cti ON CTITDI.ID_CARDS_TIPO_ID = CTI.ID "
-    qrycardsitem = qrycardsitem & " INNER JOIN GERCARDS.CARDS_TIPO_DETALHE_ID ctdi ON CTITDI.ID_CARDS_TIPO_DETALHE_ID = CTDI.ID "
-    qrycardsitem = qrycardsitem & " INNER JOIN GERCARDS.CARDS_EMPRESA_NAVIO EN ON C.ID_EMPRESA_NAVIO = EN.ID "
-    qrycardsitem = qrycardsitem & " INNER JOIN GERCARDS.CARDS_EMPRESA CE ON EN.ID_EMPRESA = CE.ID "
-    qrycardsitem = qrycardsitem & " INNER JOIN GERCARDS.CARDS_NAVIO CN ON EN.ID_NAVIO = CN.ID "
-    qrycardsitem = qrycardsitem & " LEFT JOIN GERCARDS.CARDS_UNIDADE CU ON C.ID_UNIDADE = CU.ID "
-    qrycardsitem = qrycardsitem & " WHERE "
+    qrycards = qrycards & " WHERE DT_ARQUIVAMENTO IS NULL AND "
 
     ' Filtros
     If Request("empresa") <> "" Then
         qrycards = qrycards & " ID_EMPRESA = " & Request("empresa") & " AND "
-        qrycardsitem = qrycardsitem & " ID_EMPRESA = " & Request("empresa") & " AND "
     End If
 
     If Request("navio") <> "" Then
         qrycards = qrycards & " ID_NAVIO = " & Request("navio") & " AND "
-        qrycardsitem = qrycardsitem & " ID_NAVIO = " & Request("navio") & " AND "
     End If
 
     If Request("tipodetalheid") <> "Tipo Detalhe Id..." And Request("tipodetalheid") <> "Detail ID Type..." Then
         qrycards = qrycards & " ID_CARDS LIKE '%" & Request("tipodetalheid") & "%' AND "
-        qrycardsitem = qrycardsitem & " ID_CARDS LIKE '%" & Request("tipodetalheid") & "%' AND "
     End If
 
     If Session("PERFIL") <> "A" Then
         qrycards = qrycards & " EN.ID = " & Session("ID_EMPRESA_NAVIO_LOGADO") & " AND "
-        qrycardsitem = qrycardsitem & " EN.ID = " & Session("ID_EMPRESA_NAVIO_LOGADO") & " AND "
     End If
 
     If Request("datainicio") <> "" And Request("datatermino") <> "" Then
         qrycards = qrycards & " (DATA_SOLICITACAO >= TO_DATE('" & Request("datainicio") & "','DD/MM/YYYY')) AND "
         qrycards = qrycards & " (DATA_SOLICITACAO <= TO_DATE('" & Request("datatermino") & "','DD/MM/YYYY')) AND "
-        qrycardsitem = qrycardsitem & " (DATA_SOLICITACAO >= TO_DATE('" & Request("datainicio") & "','DD/MM/YYYY')) AND "
-        qrycardsitem = qrycardsitem & " (DATA_SOLICITACAO <= TO_DATE('" & Request("datatermino") & "','DD/MM/YYYY')) AND "
     End If
 
-    groupby = " GROUP BY STATUS_ANALISE, CTDI.DESCRICAO "
-    groupbyitem = " GROUP BY ctdi.DESCRICAO "
+    qrycards = RemoverUltimaPalavra(qrycards, "AND")
+    qrycards = qrycards & " GROUP BY STATUS_ANALISE, CTDI.DESCRICAO "
 
-    ' Usa uma cláusula padrão para fechar os WHEREs    
-    incluiand = " 1=1 AND "
-
-    ' Totais
-    Call BD.AbreQueryDireto(qrycards & incluiand & " STATUS_ANALISE = 'A' AND DT_ARQUIVAMENTO IS NULL " & groupby)
-    objJson("TOTALASSINADO") = BD.numRegs
-    objJson("REGISTROASSINADO") = BD.GetJsonFromRs("REGISTROS")
-    Call BD.fechaQuery
-
-    Call BD.AbreQueryDireto(qrycards & incluiand & " STATUS_ANALISE = 'N' AND DT_ARQUIVAMENTO IS NULL " & groupby)
-    objJson("TOTALNAOASSINADO") = BD.numRegs
-    objJson("REGISTRONAOASSINADO") = BD.GetJsonFromRs("REGISTROS")
-    Call BD.fechaQuery
-
-    Call BD.AbreQueryDireto(qrycards & incluiand & " STATUS_ANALISE = 'R' AND DT_ARQUIVAMENTO IS NULL " & groupby)
-    objJson("TOTALREJEITADO") = BD.numRegs
-    objJson("REGISTROREJEITADO") = BD.GetJsonFromRs("REGISTROS")
-    Call BD.fechaQuery
-
-    Call BD.AbreQueryDireto(qrycardsitem & incluiand & " STATUS_ANALISE = 'A' AND DT_ARQUIVAMENTO IS NULL " & groupbyitem)
-    objJson("TOTALITEMASSINADO") = BD.numRegs
-    objJson("REGISTROITEMASSINADO") = BD.GetJsonFromRs("REGISTROS")
-    Call BD.fechaQuery
-
-    Call BD.AbreQueryDireto(qrycardsitem & incluiand & " STATUS_ANALISE = 'N' AND DT_ARQUIVAMENTO IS NULL " & groupbyitem)
-    objJson("TOTALITEMNAOASSINADO") = BD.numRegs
-    objJson("REGISTROITEMNAOASSINADO") = BD.GetJsonFromRs("REGISTROS")
-    Call BD.fechaQuery
-
-    Call BD.AbreQueryDireto(qrycardsitem & incluiand & " STATUS_ANALISE = 'R' AND DT_ARQUIVAMENTO IS NULL " & groupbyitem)
-    objJson("TOTALITEMREJEITADO") = BD.numRegs
-    objJson("REGISTROITEMREJEITADO") = BD.GetJsonFromRs("REGISTROS")
+    Call BD.AbreQueryDireto(qrycards)
+    objJson("REGISTROS") = BD.GetJsonFromRs("REGISTROS")
     Call BD.fechaQuery
 
     objJson.Flush

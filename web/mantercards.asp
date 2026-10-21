@@ -80,6 +80,34 @@
 		#tbCardsFixedHeader th {
 			background-color: var(--primary);
 		}
+
+		.cards-total .card-body {
+			padding: 0.75rem !important;
+		}
+
+		.cards-total .media > span {
+			margin-right: 0.5rem !important;
+		}
+
+		.cards-total .media-body p {
+			font-size: 0.875rem !important;
+			margin-bottom: 0.35rem !important;
+		}
+
+		.cards-total .media-body h3 {
+			font-size: 1.35rem;
+			margin-bottom: 0.35rem;
+		}
+
+		.cards-total .progress {
+			height: 0.35rem;
+			margin-bottom: 0.4rem !important;
+		}
+
+		.cards-total .media-body small {
+			font-size: 0.75rem !important;
+			line-height: 1.2;
+		}
 	</style>
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<link href="vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
@@ -253,9 +281,9 @@
                     </div>
                 </div>
 
-				<div class="row">
+				<div class="row cards-total">
 
-					<div class="col-xl-4 col-xxl-6 col-lg-6 col-sm-6">
+					<div class="col-xl-4 col-xxl-4 col-lg-4 col-sm-6">
 						<div id="divassinado" class="widget-stat card bg-success">
 							<div class="card-body  p-4">
 								<div class="media">
@@ -274,7 +302,7 @@
 							</div>
 						</div>
 					</div>
-					<div class="col-xl-4 col-xxl-6 col-lg-6 col-sm-6">
+					<div class="col-xl-4 col-xxl-4 col-lg-4 col-sm-6">
 						<div id="divnaoassinado" class="widget-stat card bg-secondary">
 							<div class="card-body p-4">
 								<div class="media">
@@ -294,7 +322,7 @@
 						</div>
 					</div>					
 					
-					<div class="col-xl-4 col-xxl-6 col-lg-6 col-sm-6">
+					<div class="col-xl-4 col-xxl-4 col-lg-4 col-sm-6">
 						<div id="divrejeitado" class="widget-stat card bg-danger">
 							<div class="card-body  p-4">
 								<div class="media">
@@ -568,7 +596,7 @@
     
 	<script src="./js/common.js?v=1.0.0"></script>
 	<script src="./js/cards.js"></script>
-	<script src="./js/mantercards.js?v=1.8"></script>
+	<script src="./js/mantercards.js?v=1.9"></script>
 	
 	</form>
 	

@@ -121,6 +121,7 @@ function ativarHeaderFixoCards() {
     function atualizarPosicao() {
         var elementoTabela = tabela[0];
         var retangulo = elementoTabela.getBoundingClientRect();
+        var retanguloContainer = $('#divtbCards')[0].getBoundingClientRect();
         var alturaCabecalho = cabecalhoOriginal.outerHeight();
         var deveExibir = retangulo.top < 0 && retangulo.bottom > alturaCabecalho;
 
@@ -130,11 +131,14 @@ function ativarHeaderFixoCards() {
         }
 
         cabecalhoFixo.css({
-            left: retangulo.left + 'px',
-            width: retangulo.width + 'px',
+            left: retanguloContainer.left + 'px',
+            width: retanguloContainer.width + 'px',
             height: alturaCabecalho + 'px'
         }).show();
-        tabelaFixa.css('width', retangulo.width + 'px');
+        tabelaFixa.css({
+            width: retangulo.width + 'px',
+            marginLeft: (retangulo.left - retanguloContainer.left) + 'px'
+        });
     }
 
     sincronizarCabecalho();
@@ -144,6 +148,7 @@ function ativarHeaderFixoCards() {
         atualizarPosicao();
     });
     $(window).on('scroll.tbCardsFixedHeader', atualizarPosicao);
+    $('#divtbCards').on('scroll.tbCardsFixedHeader', atualizarPosicao);
     $(window).on('resize.tbCardsFixedHeader', function() {
         sincronizarCabecalho();
         atualizarPosicao();
