@@ -1,0 +1,876 @@
+<%
+
+'
+'	Arquivo de configuração de impressão de arquivos PDF
+'
+'	Formato:
+'		Título do rel	N:SSS								- Título do documento
+'		Arquivo Base	P:Arq								- Nome do arquivo PDF base do documento
+'		Nova página		G									- Isere uma nova página. Sem parâmetros
+'		Padrão tracejo	D:LL1,LL2,LL3,...					- A largura de cada um dos padrões da linha (0 = contínua)
+'		Linha gráfica	L:XX1,YY1,XX2,YY2,SSS				- linha de (XX1,YY1) até (XX2,YY2) espessura SSS
+'		Retângulo		Q:XX1,YY1,XX2,YY2,SSS,RGB			- Retângulo, espessura SSS preenchimento RGB
+'		Texto			T:XXX,YYY,[Texto]					- Texto em (XXX,YYY), tamanho TTT estilo S
+'		 " em retângulo	W:XX1,YY1,XX2,YY2,[Texto]			- Idem ao anterior, em um retângulo
+'		Imagens			I:XX1,YY1,WID,HEI,[Arq]				- Coordenadas/Arquivo de uma imagem
+'		Fonte			F:Nome, Tam, Estilo, Cor			- Fonte a ser usada abaixo
+'		Alinhamento		M:Alinhamento						- Alinhamento de texto (só funciona usando-se 'W')
+'		Cód. Barras		B:XXX,YYY,WID,HEI,TIPO,[Cod]		- Impressão de código de barras
+'		Cód. Barras C39	B39:XXX,YYY,WID,HEI,[Cod	]		- Impressão de código de barras Code 39
+'		Offset			R:[xxx]								- Offset vertical (em mm)
+'		Offset			C:[xxx]								- Offset horizontal (em mm)
+'		Tabela			A:XX1,YY1,HEI,LIN,[WD1,WD2,...],[zz]- Tabela em (XX1,YY1), linhas de altura HEI
+'															  grade de espessura LIN, larguras WD1, WD2 e
+'															  zz contém L1C1\L1C2\L1C3|L2C1\L2C2\L2C3...
+'
+'	Observações:
+'		Estilos:		0 - normal; 1 - bold; 2 - italic; 3 - bold + italic
+'
+'		Alinhamento:	0 - esquerdo; 1 - direito; 2 - centro
+'
+'		Arquivo-base:	[Arq] obterá o nome do arquivo de uma variável
+'						Arq é o próprio nome do arquivo
+'
+'		Imagens:		[Arq] obterá o nome do arquivo de uma variável, com path completo
+'						Arq é o próprio nome do arquivo obrigatoriamente na pasta definida como padrão
+'
+'		Texto:			[Texto] obterá o texto de uma variável
+'						Texto é o próprio texto
+'						Em texto retângulo, podem ser incluídas variáveis
+'
+'		Offset:			[xxx] obterá o valor a partir de uma variável
+'						xxx é o próprio valor
+'						precedido de "+" ou "-" criará valor relativo
+'
+'		Tabela:			[zz] obterá o texto da tabela de uma variável
+'						zz é o próprio texto da tabela
+'
+'		Cód. Barras:	O código de tipo pode ser um dos seguintes
+'						1. UPC-A - The most common type of barcode. Used in retail applications. Requires 11 or 12 numeric digits; if 11 are given, AspPDF calculates and adds the 12th digit which is a check digit.  
+'						2. UPC-E - A shortened form of UPC-A. Requires 8 numeric digits.  
+'						3. EAN-13 - A superset of UPC-A, with one additional digit. Requires 12 or 13 numeric digits; the 13th is a check digit in the same manner as UPC-A.  
+'						4. EAN-8 - A shortened form of EAN-13. Requires 7 or 8 numeric digits; the 8th is a check digit.  
+'						5. UPC-A with supplemental - A UPC-A code, plus either a 2-digit or 5-digit supplemental code. Requires 14 numeric digits for the 2-digit version and 17 digits for the 5-digit version. If the 12th character is a space, AspPDF will calculate a check digit for that space and encode it.  
+'						6. UPC-E with supplemental - Similar to UPC-A with supplemental. Requires 10 or 13 numeric digits.  
+'						7. EAN-13 with supplemental - Similar to UPC-A with supplemental. Requires 15 or 17 numeric digits. Calculates a check digit if the 13th character is a space.  
+'						8. EAN-8 with supplemental - Similar to UPC-A with supplemental. Requires 10 or 13 numeric digits. Calculates a check digit if the 8th character is a space.  
+'						9. 2-digit supplemental - The 2-digit supplemental barcode can be drawn by itself without an accompanying main barcode.  
+'						10. 5-digit supplemental - See previous. None of the UPC or EAN barcode types use the FontSize or BarWeight parameter. All other barcodes do use FontSize, and use BarWeight unless otherwise specified.  
+'						11. Industrial 2 of 5 - Can encode any quantity of numeric characters. AspPDF adds the start and stop bars.  
+'						12. Interleave 2 of 5 - Similar to Industrial 2 of 5 with a more compact encoding scheme.  
+'						13. Interleave 2 of 5 Special - Same as Interleave 2 of 5 but with different spacing. Does not use BarWeight.  
+'						14. DataLogic 2 of 5 - Similar to Industrial 2 of 5 but with a different compact encoding scheme.  
+'						15. Plessey - Can encode any quantity of numeric characters. AspPDF adds the start and stop bars. This image illustrates the use of the BarWeight parameter set to 3. Note that the wide bars are much thicker than the thin bars.  
+'						16. Codabar - Can encode any quantity of these characters: 0123456789-$:/.+ Requires a matched pair of start and stop characters which must be the letters A, B, C, or D. Does not use BarWeight.  
+'						17. Code 39 - A common encoding scheme for alphabetic text. Can encode numbers, uppercase letters, and these characters: -. $/+% AspPDF encodes lowercase characters as uppercase, and adds start and stop bars.  
+'						18. Code 11 - Can encode any quantity of numeric characters.  
+'						20. Code 39 Extended - Can encode the entire ASCII set (characters 0 to 127). Can optionally add a check digit with the AddCheck parameter.  
+'						21. Code 93 - Can encode the entire ASCII set (characters 0 to 127). Does not use BarWeight.  
+'						22. Code 128 - Can encode the entire ASCII set (characters 0 to 127). Does not use BarWeight. Must use a check digit via the AddCheck=true parameter. Automatically selects between Code-128 encoding schemes as necessary. Implements the Code-C encoding scheme to compactly encode pairs of digits; this is done if the optional parameter Compress is set to True.  
+'						23. Code 128 Raw - Provides access to advanced features of Code-128 encoding; AspPDF does not do any processing of the data passed to it, except for adding the stop bars and optionally adding the check digit. You must provide the start code character; in VB or ASP, this would be ChrW(135) for Code A, ChrW(136) for Code B, and so on. Consult a Code 128 reference for full information on specifications such as function and shift characters.  
+'						30. US Postal Code - Printed on mail by the US Postal Service. AspPDF calculates and adds a check digit. Does not use BarWeight.  
+'						31. UK/Canada Postal Code - Printed on mail by the UK and Canada mail services. Does not use BarWeight.  
+'
+'		'$' antes das medidas indicam valor fixo, sem acréscimo do offset
+
+
+
+'	Métodos públicos:
+'		inicializa (caminho, modelo)
+'			caminho: Define o caminho do PDF base, imagens e arquivos DAT
+'			modelo:  Opcional. Define o PDF base
+'		finaliza
+'		comando (s)
+'			s: Comando a ser executado, seguindo a sintaxe definida acima
+'		montaArquivo (arquivo)
+'			arquivo: arquivo DAT a ser montado no PDF
+'		gravaAraquivo (saida)
+'			saida: arquivo destino PDF com caminho completo
+'		criaPagina(modelo)
+'			modelo: Opcional. Define o PDF base da página
+'		insereVariavel(stNome,stValor)
+'		variavel (stNome)
+'			stNome: Nome da variável da qual se quer o conteúdo
+'		registra
+'		defineCaminho(caminho)
+'			caminho: Define o caminho do PDF base, imagens e arquivos DAT
+'		info
+
+
+
+	class TprintPDF
+
+		private FSO				'FileSystemObjects particular da classe
+		private DebugMode		'Informa se as mensagens de debug devem ser apresentadas
+
+		private pdf				'Objeto Persists PDF
+		private doc				'Documento PDF (item do objeto)
+		private page			'Página atual do documento
+		private canvas			'Área utilizável do documento
+		private param			'Usado para passar parâmetros para o PDF
+		private font			'Parâmetro para fontes
+		private align			'Alinhamento do texto
+
+		private camPDF			'Caminho da pasta dos PDFs e dos DATs
+		private basePDF			'Arquivo PDF base
+		private saidaPDF		'Arquivo de saída
+
+		private mm_				'Tamanho (na unidade de PDF) de 1mm
+		private inch_			'Tamanho (na unidade de PDF) de 1"
+
+		private pagWidth		'Largura da página (em PDF)
+		private pagHeight		'Largura da página (em PDF)
+
+		private colOffset		'Offset da horizontal página
+		private rowOffset		'Offset da horizontal página
+
+		Private stVarNome()		'Nomes das variáveis
+		Private stVarValor()	'Valor destas variáveis
+		Private numVar			'Número de variáveis
+
+		private fontName		'Nome da fonte
+		private fontSize		'Tamano da fonte
+		private fontStyle		'Estilo da fonte (0 - normal; 1 - bold; 2 - italic; 3 - bold + italic)
+		private fontColor		'Cor da fonte
+
+		private barWidth		'Largura padrão de uma barra, no código, em unidades de PDF
+		private dashPattern		'Padrão de dash (para linhas tracejadas, pontilhadas etc)
+
+
+
+		'Construtor da classe.
+		private sub class_Initialize()
+		end sub
+
+
+		'Destrutor da classe.
+		private sub class_Terminate()
+		end sub 
+
+
+		'Prepara o objeto
+		public sub inicializa(caminho, modelo)
+
+			'Modo DEBUG
+			DebugMode = false
+
+			'Objeto FSO particular
+			Set FSO = CreateObject("Scripting.FileSystemObject")
+
+			'Define o caminho dos arquivos auxiliares
+			call defineCaminho (caminho)
+
+			'Cria as constantes de dimensão
+			inch_	= 72
+			mm_		= 72 / 25.4
+
+			'Define o tamanho padrão da página (A4) e offsets
+			pagWidth  = mm(210)
+			pagHeight = mm(297)
+			colOffset = 0
+			rowOffset = 0
+
+			'Cria os objetos
+			set pdf = Server.CreateObject("Persits.Pdf")
+			call registra
+
+			if debugMode then 
+				response.write ("DBG caminho: " & caminho & "<br>" & vbCrLf)
+				response.write ("DBG modelo: " & modelo & "<br>" & vbCrLf)
+			end if
+
+			if len(modelo) > 0 and FSO.fileExists(camPDF & modelo) then
+				'Abre um arquivo pré-existente
+				set doc  = pdf.openDocument(camPDF & modelo)
+				set page = doc.pages(1)
+
+				basePDF = caminho
+				if right (basePDF,1) <> "\" then basePDF = basePDF & "\"
+				basePDF = basePDF & modelo
+
+				pagWidth = page.width
+				pagHeight = page.height
+			else
+				'Cria um arquivo em branco (obs: tamanho A4)
+				set doc  = pdf.createDocument()
+				call criaPagina("")
+
+			end if
+
+			'Confugurações de fonte
+			fontName = "Arial"
+			fontSize = 10
+			fontStyle = 0
+
+			'Configurações diversas
+			numVar = 0
+			barWidth = 0.8
+			dashPattern = ""
+			align = 0
+
+			if FSO.fileExists ("c:\windows\fonts\" & fontName & ".ttf") then
+				set font = doc.fonts.loadFromFile("c:\windows\fonts\" & fontName & ".ttf")
+			else
+				set font = doc.fonts("Helvetica")
+			end if
+
+			'Setando últimos objetos
+			set canvas = page.canvas
+			set param = pdf.createparam
+		end sub
+
+
+		'Finaliza os objetos
+		public sub finaliza
+			set param = nothing
+			set canvas = nothing
+			set page = nothing
+			set doc = nothing
+			set pdf = nothing
+			set fso = nothing
+		end sub
+
+
+		public sub comando (s)
+
+			dim imagem, img
+			dim cmd, txt, cor
+			dim auxDoc
+			dim tabLargCel, tabLinhas, tabCels
+			dim x1, x2, y1, y2
+			dim i,j
+
+			if instr (s, "'") > 0 then s = trim(left (s,instr(s,"'")-1))
+
+			if len (s) > 0 then
+
+				cmd = ucase(split(s,":")(0))
+				s = split(mid (s, instr(s,":")+1,len(s)),",")
+
+				if debugMode then 
+					response.write ("DBG cmd: " & cmd & " - s: ")
+					for i = 0 to ubound (s)
+						if i > 0 then response.write ("; ")
+						response.write (s(i))
+					next
+					response.write ("<br>")
+				end if
+
+				select case cmd
+					'Título do documento
+					case "N"
+						doc.title = s(0)
+						if debugMode then response.write ("DBG Título do documento: " & s(0) & "<br>")
+
+					'Nova página
+					case "G"
+						call criaPagina("")
+
+					'Offset vertical
+					case "R"
+						txt = s(0)
+						if left(txt,1) = "[" then txt = variavel (mid(txt,2,len(txt)-2))
+						if len(txt) > 0 then
+							if instr (txt,"+") + instr (txt,"-") > 0 then
+								rowOffset = rowOffset + mm(cint(txt))
+							else
+								rowOffset = mm(cint(txt))
+							end if
+						end if
+						if debugMode then response.write ("DBG offset vertical: " & txt & "<br>")
+
+					'Offset horizontal
+					case "C"
+						txt = s(0)
+						if left(txt,1) = "[" then txt = variavel (mid(txt,2,len(txt)-2))
+						if len (txt) > 0 then
+							if instr (txt,"+") + instr (txt,"-") > 0 then
+								colOffset = colOffset + mm(cint(txt))
+							else
+								colOffset = mm(cint(txt))
+							end if
+						end if
+						if debugMode then response.write ("DBG offset horizontal: " & txt & "<br>")
+
+					'Arquivo Base
+					'Atenção: Este comando exclui alterações anteriores no PDF
+					case "P"
+						txt = s(0)
+						if left(txt,1) = "[" then txt = variavel (mid(txt,2,len(txt)-2))
+
+						if FSO.fileExists(camPDF & txt) then
+							'Obtém o arquivo pré-existente
+							basePDF = txt
+							set doc  = pdf.openDocument(camPDF & basePDF)'.extractPages("Page1=1")
+							set page = doc.pages(1)
+							set canvas = page.canvas
+
+							pagWidth = page.width
+							pagHeight = page.height
+							if debugMode then response.write ("DBG Modelo PDF: " & s(0) & "<br>")
+						else
+							basePDF = ""
+						end if
+
+					'Padrão do tracejo
+					case "D"
+
+						if ubound(s) > 0 or (ubound(s) = 0 and cstr(s(0)) <> "0") then
+							dashPattern = join (s,",")
+						else
+							dashPattern = ""
+						end if
+
+					'Linha gráfica
+					case "L"
+						s(4) = replace (s(4),".",",")
+						if len(s(4)) > 0 and s(4) > 0 then page.canvas.lineWidth = s(4)
+						page.canvas.setColor 0,0,0	'Por enquanto, sempre preto
+
+						x1 = mm(replace(s(0),"$",""))
+						if instr (s(0),"$") = 0 then x1 = x1 + colOffset
+
+						y1 = pagHeight - mm(replace(s(1),"$",""))
+						if instr (s(1),"$") = 0 then y1 = y1 - rowOffset
+
+						x2 = mm(replace(s(2),"$",""))
+						if instr (s(2),"$") = 0 then x2 = x2 + colOffset
+
+						y2 = pagHeight - mm(replace(s(3),"$",""))
+						if instr (s(3),"$") = 0 then y2 = y2 - rowOffset
+
+						param.remove("DashPhase")
+						for i = 1 to 10
+							param.remove("Dash" & i)
+						next
+
+						if dashPattern & "" <> "" then
+							s = split (dashPattern,",")
+							for i = 0 to ubound (s)
+								page.canvas.SetParams "Dash" & (i+1) & "=" & s(i)
+							next
+							page.canvas.SetParams "DashPhase=0"
+						else
+							page.canvas.SetParams "Dash1=1; Dash2=0"
+						end if
+
+						page.canvas.moveTo x1, y1
+						page.canvas.lineTo x2, y2
+						page.canvas.stroke
+
+						if debugMode then response.write ("DBG linha gráfica: (" & formatNumber(x1,3) & ";" & formatNumber(y1,3) & ") - " & _
+														  "(" & formatNumber(x2,3) & ";" & formatNumber(y2,3) & ")" & ", " & page.canvas.lineWidth & "<Br>")
+
+					'Retângulo
+					case "Q"
+						s(4) = replace (s(4),".",",")
+						if len(s(4)) > 0 and s(4) > 0 then page.canvas.lineWidth = s(4)
+						page.canvas.setColor 0,0,0	'Por enquanto, sempre preto
+
+						x1 = mm(replace(s(0),"$",""))
+						if instr (s(0),"$") = 0 then x1 = x1 + colOffset
+
+						y1 = pagHeight - mm(replace(s(3),"$",""))
+						if instr (s(3),"$") = 0 then y1 = y1 - rowOffset
+
+						x2 = mm(cint(replace(s(2),"$","")))
+						if instr (s(2),"$") = 0 then x2 = x2 + colOffset
+
+						y2 = pagHeight - mm(replace(s(1),"$",""))
+						if instr (s(1),"$") = 0 then y2 = y2 - rowOffset
+
+						x2 = x2 - x1
+						y2 = y2 - y1
+
+						page.canvas.setFillColor int("&H" & left(s(5),1))/16, int("&H" & mid(s(5),2,1))/16, int("&H" & right(s(5),1))/16
+
+						if ucase(s(5)) <> "FFF" then page.canvas.fillRect x1, y1, x2, y2
+						if len(s(4)) > 0 and s(4) > 0 then page.canvas.drawRect x1, y1, x2, y2
+
+						if debugMode then response.write ("DBG retângulo: (" & formatNumber(x1,3) & "," & formatNumber(y1,3) & ") - " & _
+														  "(" & formatNumber(x2,3) & "," & formatNumber(y2,3) & "), " & s(4) & "," & s(5) & "<Br>")
+
+					'Texto fixo / Texto variável / Texto variável em retângulo
+					case "T", "W"
+						if cmd = "W" then j = 4 else j = 2
+
+						txt = s(j)
+				
+						if ubound(s) > j then
+							for i = j+1 to ubound(s)
+								txt = txt & "," & s(i)
+							next
+						end if
+
+						if left(txt,1) = "[" then txt = variavel(mid(txt,2,len(txt)-2))
+
+						x1 = mm(replace(s(0),"$",""))
+						if instr (s(0),"$") = 0 then x1 = x1 + colOffset
+
+						y1 = pagHeight - mm(replace(s(1),"$",""))
+						if instr (s(1),"$") = 0 then y1 = y1 - rowOffset
+
+						if cmd = "W" then
+							x2 = mm(replace(s(2),"$",""))
+							if instr (s(2),"$") = 0 then x2 = x2 + colOffset
+
+							y2 = pagHeight - mm(replace(s(3),"$",""))
+							if instr (s(3),"$") = 0 then y2 = y2 - rowOffset
+
+							for i = 1 to numvar
+								if txt <> "" then txt = replace (txt,"#" & stVarNome(i-1) & "#", trim(stVarValor(i-1) & ""))
+							next
+						end if
+
+						param("x") = x1
+						param("y") = y1
+						param("html") = true
+						param("size") = fontSize
+						param.remove("width")
+						param.remove("height")
+
+						if cmd = "W" then
+							param("width") = x2-x1
+							param("height") = y2-y1
+						end if
+
+						j = "left"
+						if cmd = "W" then
+							select case cint (align)
+								case 1: j="right" 
+								case 2: j="center"
+								case 3: j="justify"
+							end select
+						end if
+
+						if debugMode then response.write ("DBG texto: (" & formatNumber(x1,3) & "," & formatNumber(y1,3) & ") " & txt & "<br>")
+
+						txt = "<DIV ALIGN=""" & j & """><FONT FACE=""" & fontName & """ COLOR=""#" & fontColor & """>" & txt & "</FONT></DIV>"
+						if fontStyle = 1 or fontStyle = 3 then txt = "<b>" & txt & "</b>"
+						if fontStyle = 2 or fontStyle = 3 then txt = "<i>" & txt & "</i>"
+
+						Canvas.DrawText txt, param, font
+
+					'Imagens
+					case "I"
+						img = trim(s(4))
+						j = 0
+						if left (img,1) = "[" and right (img,1) = "]" then
+							img = variavel (mid(img,2,len(img)-2))
+							if FSO.fileExists (img) then
+								j = 1
+							end if
+						else
+							if FSO.fileExists (camPDF & img) then
+								img = camPdf & img
+								j = 1
+							end if
+						end if
+
+						if j = 1 then 
+							set imagem = doc.openImage(img)
+
+							x1 = mm(replace(s(0),"$",""))
+							if instr (s(0),"$") = 0 then x1 = x1 + colOffset
+
+							y1 = pagHeight - mm(replace(s(1),"$",""))
+							if instr (s(1),"$") = 0 then y1 = y1 - rowOffset
+
+							x2 = replace(replace(s(2),"$",""),".",",") / 25.4 'Largura em polegadas
+							y2 = replace(replace(s(3),"$",""),".",",") / 25.4 'Altura em polegadas
+
+
+							'Tamanho real da imagem em polegadas
+							x2 = x2 / (imagem.width  / imagem.resolutionX)
+							y2 = y2 / (imagem.height / imagem.resolutionY)
+							param("x") = x1
+							param("y") = y1 - mm(replace(s(3),"$",""))
+							Param("ScaleX") = x2
+							Param("ScaleY") = y2
+
+							if j = 1 then
+								page.canvas.drawImage imagem, param
+							end if
+						end if
+
+						if debugMode then 
+							response.write ("DBG imagem: " & cstr(img))
+							response.write (" - w: " & formatNumber(x2,3) & "; h: " & formatNumber(y2,3) & "<br>")
+						end if
+
+					'Fonte
+					case "F"
+						if len(trim(s(0))) > 0 then
+							if FSO.fileExists ("c:\windows\fonts\" & s(0) & ".ttf") then
+								fontName= s(0)
+							else
+								set font = doc.fonts(s(0))
+							end if
+						end if
+
+						if len (trim(s(1))) > 0 then fontSize = s(1)
+						if len (trim(s(2))) > 0 then fontStyle = s(2)
+						if len (trim(s(3))) > 0 then fontColor = mid(s(3),1,1) & mid(s(3),1,1) & mid(s(3),2,1) & mid(s(3),2,1) & mid(s(3),3,1) & mid(s(3),3,1)
+
+						if debugMode then response.write ("DBG fonte: " & s(0) & "; " & s(1) & "; " & s(2) & "<br>")
+
+					'Alinhamento
+					case "M"
+						align = s(0)
+						if debugMode then response.write ("DBG alinhamento: " & s(0) & "<br>")
+
+					'Cód. Barras
+					case "B"
+						x1 = mm(replace(s(0),"$",""))
+						if instr (s(0),"$") = 0 then x1 = x1 + colOffset
+
+						y1 = pagHeight - mm(replace(s(1),"$","")) - mm(replace(s(3),"$",""))
+						if instr (s(1),"$") = 0 then y1 = y1 - rowOffset
+
+						x2 = mm(replace(s(2),"$",""))
+						if instr (s(2),"$") = 0 then x2 = x2 + colOffset
+
+						y2 = mm(replace(s(3),"$",""))
+						if instr (s(3),"$") = 0 then y2 = y2 + colOffset
+
+						txt = s(5)
+						if left(txt,1) = "[" then txt = variavel (mid(txt,2,len(txt)-2))
+
+						param("x") = x1
+						param("y") = y1
+						param("width") = x2
+						param("height") = y2
+						param("type") = s(4)
+						param("drawtext") = false
+						page.canvas.lineWidth = 1
+						if txt <> "" then page.Canvas.DrawBarcode txt, param
+
+						if debugMode then response.write ("DBG barcode: " & variavel(s(5)) & "<br>")
+
+					'Cód. Barras (Code39)
+					case "B39"
+						x1 = mm(replace(s(0),"$",""))
+						if instr (s(0),"$") = 0 then x1 = x1 + colOffset
+
+						y1 = pagHeight - mm(replace(s(1),"$",""))
+						if instr (s(1),"$") = 0 then y1 = y1 - rowOffset
+
+						y2 = pagHeight - mm(replace(s(3),"$","")) - mm(replace(s(1),"$",""))
+
+						txt = s(4)
+						if left(txt,1) = "[" then txt = variavel(mid(txt,2,len(txt)-2))
+
+						txt = code39(txt)
+
+						x2 = mm(cint(replace(s(2),"$",""))) / len (txt)
+
+						page.canvas.lineWidth = x2
+
+						for i = 1 to len(txt)
+							if mid(txt,i,1) = "1" then 
+								page.canvas.moveTo x1,y1
+								page.canvas.lineTo x1,y2
+								page.canvas.stroke
+							end if 
+							x1 = x1 + x2
+						next
+
+						if debugMode then response.write ("DBG barcode 39: " & variavel(s(4)) & "<br>")
+
+					'Tabela
+					case "A"
+						x1 = mm(cint(replace(s(0),"$","")))
+						if instr (s(0),"$") = 0 then x1 = x1 + colOffset
+
+						y1 = pagHeight - mm(cint(replace(s(1),"$","")))
+						if instr (s(1),"$") = 0 then y1 = y1 - rowOffset
+
+						y2 = mm (s(2))
+
+						tabLargCel = split (replace(replace(s(4),"[",""),"]",""),";")
+
+						txt = s(5)
+						if left(txt,1) = "[" then txt = variavel (mid(txt,2,len(txt)-2))
+
+						tabLinhas = split (txt,"|")
+
+						if debugMode then response.write ("DBG tabela: (" & s(0) & "," & s(1) & "), " & s(2) & ", " & s(3) & "<br>")
+
+						for i = 0 to ubound (tabLinhas)
+
+							if debugMode then response.write ("DBG tabela linha " & i & ": " & tabLinhas(i) & "<br>")
+
+							'Coluna inicial
+							x1 = mm(cint(replace(s(0),"$","")))
+							if instr (s(0),"$") = 0 then x1 = x1 + colOffset
+							'Array com as células
+							tabCels = split (tabLinhas(i),"\")
+
+							for j = 0 to ubound (tabLargCel)
+
+								if j <= ubound (tabCels) then
+
+									if debugMode then response.write ("DBG tabela coluna " & j & ": " & tabCels(j) & "<br>")
+
+									txt = "<FONT FACE=""" & fontName & """ COLOR=""#" & fontColor & """>" & tabCels(j) & "</FONT>"
+									if fontStyle = 1 or fontStyle = 3 then txt = "<b>" & txt & "</b>"
+									if fontStyle = 2 or fontStyle = 3 then txt = "<i>" & txt & "</i>"
+
+									param("x") = x1+mm(0.5)
+									param("y") = y1+mm(0.5)
+									param("html") = true
+									param("size") = fontSize
+									param("width") = mm(tabLargCel(j))-mm(1)
+									param("height") = y2-mm(1)
+
+									Canvas.DrawText txt, param, font
+
+									s(3) = replace (s(3),".",",")
+									if csng(s(3)) > 0 then 
+										page.canvas.lineWidth = csng(s(3))
+										page.canvas.drawRect x1, y1-y2, mm(tabLargCel(j)), y2
+									end if
+
+								end if
+								x1 = x1 + mm(tabLargCel(j))
+							next
+							y1 = y1 - y2
+						next
+				end select
+			end if
+
+			if debugMode then response.flush
+		end sub
+
+
+		'Monta uma página (um arquivo DAT) no PDF
+		public sub montaArquivo(arquivo)
+
+			dim arq
+			dim s
+
+			if not FSO.fileExists (camPDF & arquivo) then exit sub
+
+			set arq = FSO.openTextFile (camPDF & arquivo,1)
+			do while not arq.AtEndOfStream
+				s = trim(arq.readLine)
+				call comando (s)
+			loop
+			arq.close
+		end sub
+
+
+		'Cria o arquivo de saída
+		public function gravaArquivo (saida)
+			saidaPDF = doc.save(saida)
+			gravaArquivo = saida
+		end function
+
+
+		'Cria e retorna a nova página, atualizando o canvas para esta página
+		public sub criaPagina(modelo)
+
+			dim auxDoc
+
+			if cstr(modelo) = "" then
+				set page = doc.pages.add (pagWidth, pagHeight)
+				set canvas = page.canvas
+			else
+				if left(modelo,1) = "[" then modelo = variavel (mid(modelo,2,len(modelo)-2))
+				if FSO.fileExists(camPDF & modelo) then
+
+					set auxDoc = Pdf.openDocument(camPDF & modelo)
+
+					doc.appendDocument auxDoc
+
+					set page = doc.pages(doc.pages.count)
+					set canvas = page.canvas
+				end if
+			end if
+		end sub
+
+		'Retorna a quantidade de paginas de um PDF (só chamar quando o objeto está criado)
+		public function quantidadePaginas
+			quantidadePaginas = doc.Pages.count
+		end function
+
+		public sub mudaPagina (numero)
+			set page = doc.pages(numero)
+			set canvas = page.canvas
+		end sub
+
+		'Insere uma variável na lista
+		Public Sub insereVariavel(stNome,stValor)
+
+			dim i
+
+			if debugMode then 
+				if stValor = "" or isnull(stValor) then stValor = " "
+				response.write ("DBG variável: " & stNome & " = " & cstr(stValor))
+				response.write ("<br>")
+				response.flush
+			end if
+
+			if numVar > 0 then
+				for i = 1 to numVar
+					if ucase(trim(stNome)) = ucase(trim(stVarNome(i-1))) then
+						stVarValor(i-1) = stValor
+						exit sub
+					end if
+				next
+			end if
+
+			numVar = numVar + 1
+			ReDim Preserve stVarNome(numVar-1)
+			ReDim Preserve stVarValor(numVar-1)
+
+			stVarNome(numVar-1) = stNome
+			If len(stValor) > 0 then
+				stVarValor(numVar-1) = stValor
+			Else
+				stVarValor(numVar-1) = ""
+			End If
+		End sub
+
+
+		public function variavel (stNome)
+			dim i
+
+			variavel = ""
+			if numVar = 0 then exit function
+
+			for i = 0 to numVar - 1
+				if ucase(trim(stVarNome(i))) = ucase(trim(stNome)) then
+					variavel = stVarValor(i)
+					exit function
+				end if
+			next
+		end function
+
+
+		'Registra o componente
+		public sub registra
+			pdf.regKey =	"IWezOVo910L2aohOu8R" & _
+							"PLk5o1OOlYHOi6SkOBr" & _
+							"zw+YdnUdy4v8j3Z9+9h" & _
+							"X8sFNshLRDhXGl7kI97"
+		end sub
+
+
+		'Define o caminho dos arquivos auxiliares:
+		'	- PDF base
+		'	- Imagens
+		'	- Arquivos com dados de impressão (DAT)
+		public sub defineCaminho(caminho)
+			camPDF = caminho
+			if debugMode then 
+				response.write ("DBG caminho a ser definido:" & camPDF & "<br>" & vbCrLf)
+			end if
+			if right (camPDF,1) <> "\" then camPDF = camPDF & "\"
+			if not FSO.FolderExists (camPDF) then 
+				if debugMode then 
+					response.write ("DBG caminho não encontrado:" & camPDF & "<br>" & vbCrLf)
+				end if
+				camPDF = ""
+			end if
+
+		end sub
+
+
+		'Transforma milímetros em unidades PDF
+		private function mm(tam)
+			tam = replace(tam,".",",")
+			mm = csng(tam) * mm_
+		end function
+
+
+		'Transforma polegadas em unidades PDF
+		private function inch(tam)
+			inch = cint (tam * inch_)
+		end function
+
+
+		'Retorna as informações atuais do componente
+		public function info
+			dim s, i
+
+			s = "<table border='1' width='500'><tr><th colspan='2'>Atributos</th></tr>"
+			s = s & "<tr><td>camPDF&nbsp;</td><td>" & camPDF & "</td></tr>"
+			s = s & "<tr><td>basePDF</td><td>" & basePDF & "&nbsp;</td></tr>"
+			s = s & "<tr><td>mm_</td><td>" & mm_ & "</td></tr>"
+			s = s & "<tr><td>inch_</td><td>" & inch_ & "</td></tr>"
+			s = s & "<tr><td>pagWidth</td><td>" & pagWidth & " (" & cint(pagWidth / mm_) & " mm)</td></tr>"
+			s = s & "<tr><td>pagHeight</td><td>" & pagHeight & " (" & cint(pagHeight / mm_) & " mm)</td></tr>"
+			s = s & "<tr><td>colOffset</td><td>" & colOffset & "</td></tr>"
+			s = s & "<tr><td>rowOffset</td><td>" & rowOffset & "</td></tr>"
+			s = s & "<tr><td>fontName</td><td>" & fontName & "</td></tr>"
+			s = s & "<tr><td>fontSize</td><td>" & fontSize & "</td></tr>"
+			s = s & "<tr><td>fontStyle</td><td>" & fontStyle & "</td></tr>"
+			s = s & "<tr><td>fontColor</td><td>" & fontColor & "</td></tr>"
+			s = s & "<tr><td>alignment</td><td>" & align & "</td></tr>"
+			s = s & "<tr><td>barWidth</td><td>" & barWidth & "</td></tr>"
+			s = s & "</table><br>"
+
+			s = s & "<table border='1' width='500'><tr><th colspan='2'>Objetos</th></tr>"
+			s = s & "<tr><td>doc.Title</td><td>" & doc.title & "</td></tr>"
+			s = s & "<tr><td>page.Width</td><td>" & page.width & "</td></tr>"
+			s = s & "<tr><td>page.Height</td><td>" & page.height & "</td></tr>"
+			s = s & "</table><br>"
+
+
+			s = s & "<table border='1' width='500'><tr><th colspan='2'>Variáveis</th></tr>"
+
+			if numVar > 0 then
+
+				for i = 1 to numVar
+					s = s & "<tr><td>" & stVarNome(i-1) & "</td><td>"
+					if len(cstr(stVarValor(i-1))) < 1000 then s = s & cstr(stVarValor(i-1)) else s = s & "[imagem]"
+					s = s & "</td></tr>"
+
+				next
+
+			end if
+
+			s = s & "</table>"
+
+			info = s
+
+		end function
+
+
+
+		private function code39(cod)
+			dim dig, bar
+			dim i, j, s, p
+			dim erro
+
+			dig = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ-. *$/+%"
+			bar =split( "149,349,134,459,145,345,479,147,347,457,169," & _
+						"369,136,569,156,356,679,167,367,567,189,389," & _
+						"138,589,158,358,789,178,378,578,129,239,123," & _
+						"259,125,235,279,127,237,257,246,248,268,468",",")
+			s = ""
+			erro = 0
+			if left (cod,1) <> "*" then cod = "*" & cod
+			if right(cod,1) <> "*" then cod = cod & "*"
+
+			for i = 1 to len (cod)
+				p = instr (dig, mid (cod,i,1))-1
+				if p >= 0 then
+					for j = 1 to 9
+						if instr (cstr(bar(p)),cstr(j)) > 0 then
+							if j mod 2 = 0 then s = s & "000" else s = s & "111"
+						else
+							if j mod 2 = 0 then s = s & "0" else s = s & "1"
+						end if
+					next
+				else
+					erro = i
+				end if
+				if i < len(cod) then s = s & "0"
+			next
+			if erro = 0 then code39 = s else code39 = ""
+		end function
+
+	end class
+%>

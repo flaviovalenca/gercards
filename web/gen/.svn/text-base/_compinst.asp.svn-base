@@ -1,0 +1,91 @@
+<%Dim comList(56)
+
+comList(0) = Array( "AB Mailer","ABMailer.Mailman" )
+comList(1) = Array( "ABC Upload","ABCUpload4.XForm" )
+comList(2) = Array( "ActiveFile","ActiveFile.Post" )
+comList(3) = Array( "ActiveX Data Object","ADODB.Connection" )
+comList(4) = Array( "Adiscon SimpleMail","ADISCON.SimpleMail.1" )
+comList(5) = Array( "ASP DNS", "AspDNS.Lookup" )
+comList(6) = Array( "ASP HTTP","AspHTTP.Conn" )
+comList(7) = Array( "ASP Image","AspImage.Image" )
+comList(8) = Array( "ASP Mail","SMTPsvg.Mailer" )
+comList(9) = Array( "ASP NNTP News", "AspNNTP.Conn" )
+comList(10) = Array( "ASP POP 3", "POP3svg.Mailer" )
+comList(11) = Array( "ASP Simple Upload","ASPSimpleUpload.Upload" )
+comList(12) = Array( "ASP Smart Cache","aspSmartCache.SmartCache" )
+comList(13) = Array( "ASP Smart Mail","aspSmartMail.SmartMail" )
+comList(14) = Array( "ASP Smart Upload","aspSmartUpload.SmartUpload" )
+comList(15) = Array( "ASP Tear","SOFTWING.ASPtear" )
+comList(16) = Array( "ASP Thumbnailer","ASPThumbnailer.Thumbnail" )
+comList(17) = Array( "ASP WhoIs","WhoIs2.WhoIs" )
+comList(18) = Array( "ASPSoft NT Object","ASPSoft.NT" )
+comList(19) = Array( "ASPSoft Upload","ASPSoft.Upload" )
+comList(20) = Array( "CDO NTS","CDONTS.NewMail" )
+comList(21) = Array( "Chestysoft Image","csImageFile.Manage" )
+comList(22) = Array( "Chestysoft Upload","csASPUpload.Process" )
+comList(23) = Array( "Dimac JMail","JMail.Message" )
+comList(24) = Array( "Distinct SMTP","DistinctServerSmtp.SmtpCtrl" )
+comList(25) = Array( "Dundas Mailer","Dundas.Mailer" )
+comList(26) = Array( "Dundas Upload","Dundas.Upload.2" )
+comlist(27) = Array( "Dundas PieChartServer", "Dundas.ChartServer.2")
+comlist(28) = Array( "Dundas 2D Chart", "Dundas.ChartServer2D.1")
+comlist(29) = Array( "Dundas 3D Chart", "Dundas.ChartServer")
+comList(30) = Array( "Dynu Encrypt","Dynu.Encrypt" )
+comList(31) = Array( "Dynu HTTP","Dynu.HTTP" )
+comList(32) = Array( "Dynu Mail","Dynu.Email" )
+comList(33) = Array( "Dynu Upload","Dynu.Upload" )
+comList(34) = Array( "Dynu WhoIs","Dynu.Whois" )
+comList(35) = Array( "Easy Mail","EasyMail.SMTP.5" )
+comList(36) = Array( "File System Object","Scripting.FileSystemObject" )
+comList(37) = Array( "Ticluse Teknologi HTTP","InteliSource.Online" )
+comList(38) = Array( "Last Mod","LastMod.FileObj" )
+comList(39) = Array( "Microsoft XML Engine","Microsoft.XMLDOM" )
+comList(40) = Array( "Persits ASP PDF","Persits.Pdf" )
+comList(41) = Array( "Persits ASP JPEG","Persits.Jpeg" )
+comList(42) = Array( "Persits ASPEmail","Persits.MailSender" )
+comList(43) = Array( "Persits ASPEncrypt","Persits.CryptoManager" )
+comList(44) = Array( "Persits File Upload","Persits.Upload.1" )
+comList(45) = Array( "SMTP Mailer","SmtpMail.SmtpMail.1" )
+comList(46) = Array( "Soft Artisans File Upload","SoftArtisans.FileUp" )
+comList(47) = Array( "Image Size", "ImgSize.Check" )
+comList(48) = Array( "Microsoft XML HTTP", "Microsoft.XMLHTTP" )
+comList(49) = Array( "Zaks POP3 ", "zakspop3.Server" )
+comList(50) = Array( "MS XML ", "MSXML_PROGID2" )
+comList(51) = Array( "ASPUpLoad ", "ASPUpLoad.clsUpload" )
+comList(52) = Array( "MSXML2 ", "MSXML2.ServerXMLHTTP" )
+comList(53) = Array( "AspCrypt ", "AspCrypt.Crypt" )
+comList(54) = Array( "AspZip ", "aspZip.EasyZIP" )
+comList(55) = Array( "Imagem Glue ", "ImageGlue5.Canvas" )
+comList(56) = Array( "Image Effects", "ImageEffects.FX" )
+
+Function TestObject( comIdentity )
+On Error Resume Next
+TestObject = False
+Err.Clear
+Set xTestObj = Server.CreateObject( comIdentity )
+If Err = 0 Then TestObject = True
+Set xTestObj = Nothing
+Err.clear
+End Function
+
+Public Function CheckCOM()
+OKCount = 0
+strTxt = "<table border=1 bordercolor=black cellspacing=0 cellpadding=0 align=center width=400>"
+For Idx = LBound( comList ) To UBound( comList )
+ Provider = Idx
+ strTxt = strTxt & "<tr><td width=200>" & comList(Idx)(0) & "</td>"
+ 'strTxt = strTxt & ""
+ If TestObject( comList(Idx)(1) ) Then
+  strTxt = strTxt & "<td align=center><font color=red>Instalado</font></td>"
+  OKCount = OKCount + 1
+ Else
+  strTxt = strTxt & "<td align=center>Não Instalado</td>"
+ End If
+ strTxt = strTxt & "</tr>"
+Next
+strTxt = strTxt & "</table><p align=center><b>" & OKCount & "</b> de "
+strTxt = strTxt & UBound( comList ) + 1 & " componentes estão avaliados em seu servidor.</p>"
+CheckCOM = strTxt 
+End Function
+
+Response.Write( CheckCOM() )%>

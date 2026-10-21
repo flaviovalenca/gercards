@@ -1,0 +1,21 @@
+<%
+dim conn, rs
+
+set conn = server.createObject("adodb.connection")
+conn.open "Provider=OraOLEDB.Oracle;Data Source=oracle.mydomain.com;" _
+	& "User ID=scott;PASSWORD=tiger;Persist Security Info=True"
+
+set rs = conn.execute("SELECT blobcolumn FROM blobtable WHERE id = 7")
+
+'Write it to the browser
+response.binaryWrite rs.fields("blobcolumn").value
+
+'Write it to disk
+dim stream
+set stream = server.createObject("adodb.stream")
+stream.type = adTypeBinary
+stream.open
+stream.write(rs.fields("blobcolumn").value)
+stream.saveToFile folderAndFileName, adSaveCreateOverWrite
+stream.close
+%>

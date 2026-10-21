@@ -1,0 +1,36 @@
+npm install oracledb
+npm update node-oracledb
+npm install express
+npm install jsonwebtoken
+npm install cors
+npm install body-parser
+
+
+
+
+Confirigar o TNS_ADMIN
+set TNS_ADMIN=C:\Oracle\instantclient_21_9\network\admin
+
+Abrir as configurações do sistema:
+
+Pressione as teclas Win + R para abrir a caixa de diálogo "Executar".
+Digite sysdm.cpl e pressione Enter. Isso abrirá as "Propriedades do Sistema".
+Acessar as variáveis de ambiente:
+
+Na janela "Propriedades do Sistema", vá para a guia "Avançado".
+Clique no botão "Variáveis de Ambiente".
+Visualizar as variáveis de ambiente:
+
+Na seção "Variáveis de Ambiente", você verá duas listas: "Variáveis do sistema" e "Variáveis do usuário".
+As variáveis do sistema são aplicáveis a todos os usuários do sistema, enquanto as variáveis do usuário são específicas para o usuário atual.
+Você pode clicar em uma variável na lista e clicar em "Editar" para visualizar ou alterar o valor dela.
+Para encontrar variáveis de ambiente relacionadas ao Oracle Client, você pode procurar por nomes comuns como ORACLE_HOME, TNS_ADMIN, PATH, etc.
+Usar o Prompt de Comando:
+
+Você também pode verificar as variáveis de ambiente usando o Prompt de Comando:
+Abra o Prompt de Comando digitando cmd na barra de pesquisa do Windows e pressionando Enter.
+Para exibir todas as variáveis de ambiente, você pode usar o comando set.
+Para exibir uma variável de ambiente específica, use o comando echo %NOME_DA_VARIAVEL%, substituindo NOME_DA_VARIAVEL pelo nome da variável que deseja verificar.
+
+
+

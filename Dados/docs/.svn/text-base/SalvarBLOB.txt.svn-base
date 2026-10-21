@@ -1,0 +1,28 @@
+<%
+dim conn, rs
+
+set conn = server.createObject("adodb.connection")
+conn.open "Provider=OraOLEDB.Oracle;Data Source=oracle.mydomain.com;" _
+	& "User ID=scott;PASSWORD=tiger;Persist Security Info=True"
+
+set rs = server.createObject("adodb.recordset")
+
+conn.beginTrans
+
+'Use this for an update
+conn.execute "UPDATE blobtable SET blobcolumn = empty_blob() WHERE id = 7"
+rs.open "SELECT blobcolumn FROM blobtable WHERE id = 7", conn, _
+	adOpenStatic, adLockOptimistic
+
+'Or this for an insert
+conn.execute "INSERT INTO blobtable (id, blobcolumn) " _
+	& "VALUES (blobtable_seq.nextVal, empty_blob())"
+rs.open "SELECT blobcolumn FROM blobtable WHERE id = blobtable_seq.currVal", _
+	conn, adOpenStatic, adLockOptimistic
+
+rs.fields("blobcolumn").appendChunk(stream.read)
+rs.update
+rs.close
+
+conn.commitTrans
+%>

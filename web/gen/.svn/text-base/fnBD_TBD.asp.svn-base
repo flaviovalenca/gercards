@@ -1,0 +1,900 @@
+<%
+	Class TBD
+
+		Private db				'Objeto Connection
+		Private Cursor			'Cursor pra se movimentar
+
+		Private stServer		'Endereço do servidor
+		Private stDataBase		'Nome da base de dados
+		Private stUid			'Login
+		Private stPwd			'Senha
+		Private stConnStr		'String de conexão com tags com nome das variáveis
+		Private stTipoConn		'Tipo de banco de dados
+
+		Private stQryCampo()	'Campos a serem substituídos na query
+		Private stQryValor()	'Valor destes campos
+		Private numCamposQuery	'Número de campos
+
+		Private stTabCampo()	'Nome do campo a compor a tabela
+		Private stTabLabel()	'Label para o título da coluna
+		Private stTabFmt()		'largura da coluna;estilo da célula
+		Private numCamposTab	'Número de colunas da tabela
+
+		Private stTabIndice()	'Campo índice da tabela (usada para links)
+		Private numIndicesTab	'Número de índices da tabela (usada para links)
+
+		Private stTransQueries()'Queries a ser executadas numa transação
+		Private transNumQueries	'Número de queries em uma transação
+		Private flagTransacao	'Indica se há uma transação aberta
+		Private transQueryAtual	'Armazena a query sendo executada
+
+		Private stQryTransCampo()	'Campos a serem substituídos numa única query de uma transação
+		Private stQryTransValor()	'Valor destes campos
+		Private stQryTransSeq()		'Sequência da query onde este campo será válido
+		Private numCamposQueryTrans	'Número de campos de transação
+
+
+		Public  numCampos		'Número de campos da consulta
+		Public  NomeCampo()		'Nome dos campos da consulta
+		Public  numRegs			'Número de registros
+
+		Public  Erro			'Mensagem de erro
+		Public  Query			'Query final executada
+		Public  EOF, BOF		'Indicadores de início e fim de recordset
+
+
+
+		'Conecta o banco com informações passadas por parâmetro
+		Public Sub ConectaDireto (servidor, banco, login, senha, tipoCon)
+
+			Dim iniFile, j, s
+
+			set db = server.createobject("ADODB.Connection")
+			db.CursorLocation = 3'adUseClient
+
+			stServer   = servidor
+			stDataBase = banco
+			stUid      = login
+			stPwd      = senha
+			stTipoConn = tipoCon
+			
+			Set Cursor = Nothing
+			Erro = msgOk
+			Query = ""
+			flagTransacao = false
+			EOF = True
+			numCamposQuery = 0
+			numCamposQueryTrans =0 
+			transNumQueries = 0
+			numCamposTab = 0
+			numRegs = 0
+			numCampos = 0
+
+			Set iniFile = new TIniFile
+			If iniFile.Create (Session ("stCamIni")) Then
+
+				j = 1
+				stConnStr = ""
+				Do 
+					s = UCase(iniFile.ReadValue ("TIPOCONN","TipoConn" & j,""))
+					If s = UCase(stTipoConn) Then
+						stConnStr = iniFile.ReadValue ("TIPOCONN","StrConn" & j,"")
+					End If 
+					j = j + 1
+				Loop Until stConnStr <> "" Or s = ""
+
+				'Se não encontrou uma string para o tipo de conexão, retorna o erro
+				If stConnStr = "" Then
+					Erro = "ERRO! TIPO DE CONEXÃO NÃO ENCONTRADO!"
+					Exit sub
+				End If
+
+				'Se for arquivo ACCESS, verifica se o arquivo foi encontrado
+				If stTipoConn = "MSACCESS" Then
+					If Not FSO.FileExists (stDatabase) Then
+						If Not FSO.FileExists (Session ("stCamDados") & "mdb\" & stDataBase) Then
+							Erro = "ERRO! ARQUIVO MDB NÃO ENCONTRADO!"
+							Exit Sub
+						Else
+							stDataBase = Session ("stCamDados") & "mdb\" & stDataBase
+						End If
+					End If
+				End If
+
+				'Substitui os possíveis parâmetros
+				stConnStr  = Replace (stConnStr, "#STSERVER#",stServer)
+				stConnStr  = Replace (stConnStr, "#STDATABASE#",stDatabase)
+				stConnStr  = Replace (stConnStr, "#STUID#",stUid)
+				stConnStr  = Replace (stConnStr, "#STPWD#",stPwd)
+
+				'Abre o banco
+				db.Open stconnStr
+
+			Else
+				Erro = "NÃO FOI POSSÍVEL ENCONTRAR O ARQUIVO INI!"
+			End If
+			Set iniFile = nothing
+		End Sub
+
+		'Conecta o banco com informações obtidas através do arquivo INI
+		Public Sub Conecta
+
+			Dim iniFile, ip, ipLocal, i, j, s
+
+			ipLocal = request.servervariables ("LOCAL_ADDR")
+
+			set db = server.createobject("ADODB.Connection")
+			db.CursorLocation = 3'adUseClient
+
+			stServer = ""
+			stDataBase = ""
+			stUid = ""
+			stPwd = ""
+
+			Set Cursor = Nothing
+			Erro = msgOk
+			Query = ""
+			flagTransacao = false
+			EOF = True
+			numCamposQuery = 0
+			numCamposQueryTrans =0 
+			numCamposTab = 0
+			numRegs = 0
+			numCampos = 0
+
+			Set iniFile = new TIniFile
+			If iniFile.Create (Session ("stCamIni")) Then
+
+				i = 1
+
+				Do 
+					ip = iniFile.ReadValue ("DATABASE","ip" & i,"")
+
+					If ip = iplocal Then
+						stServer   = iniFile.ReadValue ("DATABASE","stServer" & i,"")
+						stDataBase = iniFile.ReadValue ("DATABASE","stDataBase" & i,"")
+						stUid      = iniFile.ReadValue ("DATABASE","stUid" & i,"")
+						stPwd      = iniFile.ReadValue ("DATABASE","stPwd" & i,"")
+						stTipoConn = iniFile.ReadValue ("DATABASE","stTipoConn" & i,"")
+
+						'Busca a string de conexão referente a este tipo de conexão
+						j = 1
+						stConnStr = ""
+						Do 
+							s = UCase(iniFile.ReadValue ("TIPOCONN","TipoConn" & j,""))
+							If s = UCase(stTipoConn) Then
+								stConnStr = iniFile.ReadValue ("TIPOCONN","StrConn" & j,"")
+							End If 
+							j = j + 1
+						Loop Until stConnStr <> "" Or s = ""
+
+						'Se não encontrou uma string para o tipo de conexão, retorna o erro
+						If stConnStr = "" Then
+							Erro = "ERRO! TIPO DE CONEXÃO NÃO ENCONTRADO!"
+							Exit sub
+						End If
+
+						'Se for arquivo ACCESS, verifica se o arquivo foi encontrado
+						If stTipoConn = "MSACCESS" Then
+							If Not FSO.FileExists (stDatabase) Then
+								If Not FSO.FileExists (Session ("stCamDados") & "mdb\" & stDataBase) Then
+									Erro = "ERRO! ARQUIVO MDB NÃO ENCONTRADO!"
+									Exit Sub
+								Else
+									stDataBase = Session ("stCamDados") & "mdb\" & stDataBase
+								End If
+							End If
+						End If
+
+						'Substitui os possíveis parâmetros
+						stConnStr  = Replace (stConnStr, "#STSERVER#",stServer)
+						stConnStr  = Replace (stConnStr, "#STDATABASE#",stDatabase)
+						stConnStr  = Replace (stConnStr, "#STUID#",stUid)
+						stConnStr  = Replace (stConnStr, "#STPWD#",stPwd)
+
+						'Abre o banco
+						db.Open stconnStr
+
+					End If
+					i = i + 1
+				Loop Until ip = "" Or ip = ipLocal
+
+				If ipLocal <> ip Then
+					Erro = "NÃO FOI ENCONTRADA CORRESPONDÊNCIA DE BD NO ARQUIVO INI!<br>IP:" & ipLocal
+				End if
+			Else
+				Erro = "NÃO FOI POSSÍVEL ENCONTRAR O ARQUIVO INI!"
+			End If
+			Set iniFile = nothing
+		End Sub
+
+
+		'Desconecta e fecha o banco
+		Public Sub Desconecta
+
+			stServer = ""
+			stDataBase = ""
+			stUid = ""
+			stPwd = ""
+
+			stConnStr = ""
+			stTipoConn = ""
+
+			On Error Resume next
+			db.close
+			Set db=Nothing
+			Set cursor = Nothing
+			Erro = msgOk
+			Query = ""
+			EOF = True
+			BOF = True
+			numCampos = 0
+			numCamposQuery = 0
+			numCamposQueryTrans =0 
+			numCamposTab = 0
+			numRegs = 0
+			If Err.Number <> 0 Then Erro = Err.Description
+			On Error goto 0
+		End Sub
+
+
+		Public Sub Reinicia
+			On Error Resume Next
+			If Not Cursor Is Nothing Then
+				Cursor.close
+				Set Cursor = nothing
+			End If
+			Erro = msgOk
+			Query = ""
+			EOF = True
+			BOF = True
+			NumCampos = 0
+			NumCamposQuery = 0
+			numCamposQueryTrans =0 
+			numCamposTab = 0
+			numRegs = 0
+			On Error goto 0
+		End Sub
+
+		'Exceuta a query passada no parâmetro sem ter a necessidade de incluir no
+		'Arquivo de querys
+		Public Sub AbreQueryDireto(txtQuery)
+
+			query = txtQuery
+
+			'Tenta executar a query já montada
+			On Error Resume Next
+			'Set Cursor = db.execute (Query) 
+			Set Cursor = Server.CreateObject("ADODB.Recordset")
+			Cursor.open query, db
+			
+			If Err.Number <> 0 Then Erro = Err.Description Else Erro = msgOk
+
+			'Se a tarefa for abrir, então prepare os cursores,
+			'catalogue os campos e conte o número de registros
+			If Err.number = 0 Then 
+				EOF = Cursor.EOF
+				BOF = Cursor.BOF
+				numCampos = 0
+				For Each s In Cursor.Fields
+					redim Preserve NomeCampo (numCampos)
+					NomeCampo (numCampos) = s.name
+					numCampos = numCampos + 1
+				Next
+
+				'Novo teste de recordcount
+				numRegs = cursor.recordCount
+
+			Else
+				'Ocorreu um erro na abertura
+				EOF = True
+				BOF = True
+				Set Cursor = Nothing
+			End If
+
+
+		End Sub
+
+		
+		'Executa queries no banco aberto
+		Public Sub AbreQuery (alias, abre)
+			Dim caminho, arq, s, i
+			Dim fld, fls, f
+
+			'Localiza a query que atende pelo alias solicitado
+			caminho = (Session ("stCamQry"))
+
+			Erro = msgOk
+			query = ""
+
+			If Not FSO.FolderExists (caminho) Then
+				erro = "NÃO FOI POSSÍVEL ENCONTRAR ARQUIVO DE QUERIES!"
+				Exit Sub
+			End If
+
+			Set fld = FSO.GetFolder (caminho)
+			Set fls = fld.files
+
+			query = ""
+
+			For Each f In fls
+				If Right (f.name,4) = ".txt" Then 
+					Set arq = FSO.OpenTextFile (caminho & "\" & f.name,1,false)
+
+					Do
+						s = arq.ReadLine
+						If UCase (s) = "[" & UCase(alias) & "]" Then
+							Do
+								s = arq.ReadLine
+								If s <> "" and Left(s,1) <> ";" And Left(s,1) <> "[" Then
+									Query = Query & s & " "
+								End If
+							Loop Until Left(s,1) = "[" Or arq.AtEndOfStream Or Right (s,1) = ";"
+						End if
+					Loop Until Query <> "" Or arq.AtEndOfStream
+
+					arq.close
+
+					If query <> "" Then Exit For
+				End If
+			Next
+
+			Set fls = Nothing
+			Set fld = Nothing
+
+			'A query não foi encontrada
+			If Query = "" Then
+				erro = "NÃO FOI POSSÍVEL ENCONTRAR A QUERY [" & alias & "] NO ARQUIVO"
+				Exit Sub
+			End If
+
+			'Substitui as TAGS de transação
+			if flagTransacao and numCamposQueryTrans <> 0 then
+				for i = 0 to numCamposQueryTrans-1
+					if stQryTransSeq(i) = transQueryAtual then
+						Query = Replace (Query,"#" & UCase(stQryTransCampo(i)) & "#",stQryTransValor(i))
+					end if
+				next
+			end if
+
+			'Substitui as TAGS
+			For i = 0 To numCamposQuery-1
+
+				Query = Replace (Query,"#" & UCase(stQryCampo(i)) & "#",stQryValor(i))
+			next
+
+			if debugMode then response.write ("<b>[" & alias & "] (Modo " & abre & ")</b><br>" & Query & "<br><b>")
+
+			'Modo de teste de query. Não executa - só monta
+			if abre = 2 then 
+				Set cursor = Nothing
+				EOF = True
+				BOF = True
+				'numCamposQuery = 0
+				numCamposTab = 0
+				numRegs = 0
+				Erro = msgOk
+				if debugMode then response.write ("Resposta: TESTE</b><br><br>")
+				exit sub
+			end if
+
+			'Tenta executar a query já montada
+			On Error Resume Next
+			If abre = 1 Then 
+				'Set Cursor = db.execute (Query) 
+				Set Cursor = Server.CreateObject("ADODB.Recordset")
+				Cursor.open query, db
+			Else 
+				'db.autocommit = false
+				'db.beginTrans
+				db.execute (Query)
+				'db.commitTrans
+				'db.autocommit = true
+			End If
+			
+
+			If Err.Number <> 0 Then Erro = Err.Description Else Erro = msgOk
+
+			If abre = 1 Then 
+				'Se a tarefa for abrir, então prepare os cursores,
+				'catalogue os campos e conte o número de registros
+				If Err.number = 0 Then 
+					EOF = Cursor.EOF
+					BOF = Cursor.BOF
+					numCampos = 0
+					For Each s In Cursor.Fields
+						redim Preserve NomeCampo (numCampos)
+						NomeCampo (numCampos) = s.name
+						numCampos = numCampos + 1
+					Next
+
+
+					'Novo teste de recordcount
+					numRegs = cursor.recordCount
+
+				Else
+					'Ocorreu um erro na abertura
+					EOF = True
+					BOF = True
+					Set Cursor = Nothing
+				End If
+			Else
+				'Era somente execução da query
+				Set cursor = Nothing
+				EOF = True
+				BOF = True
+				'numCamposQuery = 0
+				numCamposTab = 0
+				numRegs = 0
+			End If 
+			On Error goto 0
+
+			if debugMode then response.write ("Resposta: " & Erro & "</b><br><br>")
+
+		End Sub
+
+
+		Public Sub FechaQuery
+			If Not cursor Is Nothing Then
+				Cursor.Close
+				Set Cursor = Nothing
+				Erro = msgOk
+				Query = ""
+				EOF = True
+				BOF = True
+			End If
+		End Sub
+
+
+		Public Sub Prox
+			EOF = true
+			If Not Cursor is Nothing Then
+				If Not Cursor.EOF Then Cursor.MoveNext
+				EOF = Cursor.EOF
+				erro = msgOk
+			Else
+				erro = "DATASET FECHADO!"
+			End If
+		End Sub
+
+
+		Public Sub Ant
+			BOF = true
+			If Not Cursor is Nothing Then
+				If Not Cursor.BOF Then Cursor.MovePrevious
+				BOF = Cursor.BOF
+				erro = msgOk
+			Else
+				erro = "DATASET FECHADO!"
+			End If
+		End Sub
+
+
+		Public Function Valor(stCampo)
+			If Not Cursor Is Nothing Then
+				On Error Resume Next
+				Valor = Cursor(stCampo)
+				If Err.number <> 0 Then
+					erro = Err.Description & " (" & stCampo & ")"
+					Valor = erro
+				Else
+					erro = msgOk
+				End If
+				On Error goto 0
+			End If
+		End Function
+
+
+		Public Sub LimpaCamposQuery
+			dim i
+
+			if numCamposQuery >=1 then 
+				for i = 1 to numCamposQuery
+					stQryCampo(i-1) = ""
+					stQryValor(i-1) = ""
+				next
+			end if
+
+			numCamposQuery = 0
+			numCamposQueryTrans =0 
+
+		End Sub
+
+
+		Public Sub InsereCampoQuery(byval stNome,byval stValor)
+			numCamposQuery = numCamposQuery + 1
+			ReDim Preserve stQryCampo(numCamposQuery-1)
+			ReDim Preserve stQryValor(numCamposQuery-1)
+
+			stQryCampo(numCamposQuery-1) = stNome
+			If stValor & "" <> "" then
+				stQryValor(numCamposQuery-1) = replace(replace(stValor,"'","''"),"`","'")
+			Else
+				stQryValor(numCamposQuery-1) = ""
+'				response.write ("-o " & stNome & " - " & stValor & "<br>")
+			End If
+			'INJECTION RULEZ!
+			'Caso seja necessário enviar um apóstrofo ('),
+			'é necessário enviar um acento grave no lugar (`),
+			'pois todos os apóstrofos serão substituídos por duplo ('')
+		End Sub
+
+
+		'Insere campos em uma query de transação
+		'Estes campos são válidos apenas para a próxima query inserida na transação
+		'A partir da query seguinte, eles perdem o valor
+		'
+		'Caso haja um campo genérico (insereCampoQuery) e um
+		'específico (insereCampoQueryTrans) com o mesmo nome,
+		'a ordem de prevalência é o campo de query de transação
+		'seguido de campo de query genérico
+		Public Sub InsereCampoQueryTrans(byval stNome,byval stValor)
+			'Verifica se há uma trabsação aberta
+			if not flagTransacao then
+				erro = "NÃO EXISTE TRANSAÇÃO ABERTA"
+				exit sub
+			end if
+
+			'Incrementa o contador e redimensiona o array
+			numCamposQueryTrans = numCamposQueryTrans + 1
+			ReDim Preserve stQryTransSeq(numCamposQueryTrans-1)		'Sequência da query
+			ReDim Preserve stQryTransCampo(numCamposQueryTrans-1)
+			ReDim Preserve stQryTransValor(numCamposQueryTrans-1)
+
+			stQryTransCampo(numCamposQueryTrans-1) = stNome
+			stQryTransSeq(numCamposQueryTrans-1) = transNumQueries
+
+			If stValor & "" <> "" then
+				stQryTransValor(numCamposQueryTrans-1) = replace(replace(stValor,"'","''"),"`","'")
+			Else
+				stQryTransValor(numCamposQueryTrans-1) = ""
+'				response.write ("-o " & stNome & " - " & stValor & "<br>")
+			End If
+			'INJECTION RULEZ!
+			'Caso seja necessário enviar um apóstrofo ('),
+			'é necessário enviar um acento grave no lugar (`),
+			'pois todos os apóstrofos serão substituídos por duplo ('')
+		End Sub
+
+
+		Public Sub LimpaCamposTab
+			numCamposTab = 0
+			numIndicesTab = 0
+		End Sub
+
+
+		Public Sub InsereCampoTab(nomeCampo,labelCampo, largCampo, estilo, chaveLink)
+			Dim s
+			
+			numCamposTab = numCamposTab + 1
+			ReDim Preserve stTabCampo(numCamposTab-1)
+			ReDim Preserve stTabLabel(numCamposTab-1)
+			ReDim Preserve stTabFmt(numCamposTab-1)
+
+			If abs(chaveLink) = 0 Then s = "0" Else s = "1"
+
+			stTabCampo(numCamposTab-1) = nomeCampo
+			stTabLabel(numCamposTab-1) = labelCampo
+			stTabFmt(numCamposTab-1) = largCampo & ";" & estilo & ";" & s
+
+		End Sub
+
+
+		Public Sub InsereIndiceTab(nomeCampo)
+
+			numIndicesTab = numIndicesTab + 1
+			ReDim Preserve stTabIndice(numIndicesTab-1)
+			stTabIndice(numIndicesTab-1) = nomeCampo
+
+		End Sub
+
+
+		Public Function Tabela(formato,titulo,temNum,numPag,itensPPag,linkPag,linkItem)
+			Dim s, s1, s2, i, j, k
+			Dim estilo
+			Dim iniFile
+			Dim stCabecalho, stSubtitulo, stCampo, stRodape, stNum, stPagAntes, stPagDepois
+
+			Dim numPaginas
+
+			If numPag & "" = "" Then numPag = 1
+
+			If numPag <> 0 then
+				numPaginas = numRegs / itensPPag
+				If numPaginas <> Int (numPaginas) Then numPaginas = Int (numPaginas) + 1
+			Else
+				numPaginas = 1
+			End If
+
+			If (CInt(numPag) <> 0 And cint (numPag) > numPaginas) Or CInt(numPag) < 0 Then
+				erro = "PÁGINA INVÁLIDA: " & numPag
+				Tabela = ""
+				Exit function
+			End If
+
+
+			If Not Cursor Is Nothing Then
+				If Not (Cursor.EOF And Cursor.BOF) Then
+
+					Cursor.MoveFirst
+
+					If numPag <> 0 then
+						i = numPag
+						Do Until i <= 1
+							For j = 1 To itensPPag
+								prox
+							Next
+							i = i - 1
+						Loop
+					End If
+
+
+					'Busca os padrões de formatação no arquivo ini
+					Set iniFile = new TIniFile
+
+					If iniFile.Create (fnGetFilePath(Session ("stCamIni")) & "formatTab.ini") Then
+
+						i = 1
+						Do
+							s = iniFile.readValue (formato,"Cabecalho" & i,"")
+							stCabecalho = stCabecalho & s
+							If s <> "" Then stCabecalho = stCabecalho & vbCrLf
+							i = i + 1
+						Loop Until s = ""
+
+						i = 1
+						Do
+							s = iniFile.readValue (formato,"Subtitulo" & i,"")
+							stSubtitulo = stSubtitulo & s
+							If s <> "" Then stSubtitulo = stSubtitulo & vbCrLf
+							i = i + 1
+						Loop Until s = ""
+
+						i = 1
+						Do
+							s = iniFile.readValue (formato,"Campo" & i,"")
+							stCampo = stCampo & s
+							If s <> "" Then stCampo = stCampo & vbCrLf
+							i = i + 1
+						Loop Until s = ""
+
+						i = 1
+						Do
+							s = iniFile.readValue (formato,"Rodape" & i,"")
+							stRodape = stRodape & s
+							If s <> "" Then stRodape = stRodape & vbCrLf
+							i = i + 1
+						Loop Until s = ""
+
+						i = 1
+						Do
+							s = iniFile.readValue (formato,"Num" & i,"")
+							stNum = stNum & s
+							If s <> "" Then stNum = stNum & vbCrLf
+							i = i + 1
+						Loop Until s = ""
+
+						stPagAntes = iniFile.readValue (formato,"pagAntes","&lt;&lt;")
+						stPagDepois = iniFile.readValue (formato,"pagDepois","&gt;&gt;")
+
+					End If
+					Set iniFile = Nothing
+
+					If CInt (numPag) = 0 Then
+						stCabecalho = Replace (Replace (Replace (stCabecalho, "#PANT#",""), "#PPROX#",""), "#PAG#","1")
+					End If 
+
+					If CInt(numPag) = 1 Then 
+						stCabecalho = Replace (stCabecalho,"#PANT#",stPagAntes)
+					Else
+						stCabecalho = Replace (stCabecalho,"#PANT#","<a href='" & linkPag & (numPag-1) & "'>" & stPagAntes & "</a>")
+					End If 
+
+					If CInt(numPag) = CInt(numPaginas) Then 
+						stCabecalho = Replace (stCabecalho,"#PPROX#",stPagDepois)
+					Else
+						stCabecalho = Replace (stCabecalho,"#PPROX#","<a href='" & linkPag & (numPag+1) & "'>" & stPagDepois & "</a>")
+					End If 
+
+					stCabecalho = Replace (stCabecalho,"#NCOL#",numCamposTab + Abs(temnum))
+					stCabecalho = Replace (stCabecalho,"#TITULO#",titulo)
+					stCabecalho = Replace (Replace (stCabecalho,"#NCOL#",numCamposTab + Abs(temnum)),"#NREG#",numRegs)
+					stCabecalho = Replace (Replace (stCabecalho,"#PAG#",numPag),"#TPAG#",numPaginas)
+
+					s = stCabecalho
+
+					estilo = ""
+					j = 0
+
+					'Insere a linha de título da tabela
+					s = s & "  <tr>" & vbCrLf
+						If temNum Then s = s & Replace(Replace(stSubTitulo,"#LARG#","0"),"#SUBTITULO#","#")
+					For i = 0 To numCamposTab - 1
+						s = s & Replace(Replace(stSubTitulo,"#LARG#",Split(stTabFmt(i),";")(0)),"#SUBTITULO#",stTabLabel(i))
+					Next
+					s = s & "  </tr>" & vbCrLf
+
+					'Insere as linhas de dados
+					Do Until EOF Or (j = itensPPag And numPaginas > 1)
+						If estilo = "Impar" Then estilo = "Par" Else estilo = "Impar"
+						j = j + 1
+						s = s & "  <tr>" & vbCrLf
+						If temNum Then 
+							If numPag > 0 Then 
+								s = s & replace (stNum,"#NUM#",j + itensPPag * (numPag-1)) 
+							Else
+								s = s & replace (stNum,"#NUM#",j) 
+							End If
+						End If
+
+						For i = 0 To numCamposTab - 1
+							s1 = ""
+
+
+							If CStr(Split(stTabFmt(i),";")(2)) = "1" And LinkItem <> "" then
+								'For k = 0 To numCamposTab - 1
+								'	If CStr(Split(stTabFmt(k),";")(2)) = "1" Then
+								'		If s1 = "" And InStr (linkItem,"?") = 0 Then s1 = s1 & "?" Else s1 = s1 & "&"
+								'		s1 = s1 & stTabCampo(k) & "=" & valor(stTabCampo(k))
+								'	End If
+								'Next
+
+								For k = 0 To numIndicesTab - 1
+
+									If s1 = "" And InStr (linkItem,"?") = 0 Then s1 = s1 & "?" Else s1 = s1 & "&"
+									s1 = s1 & stTabIndice(k) & "=" & valor(stTabIndice(k))
+
+								Next
+
+								s1 = "<a class='tab' href='" & LinkItem & s1 & "'>"
+							End If
+
+							s1 = s1 & valor(stTabCampo(i)) 
+
+							If CStr(Split(stTabFmt(i),";")(2)) = "1" And LinkItem <> "" Then
+								s1 = s1 & "</a>"
+							End If
+							s = s & Replace (Replace (replace (stCampo,"#CLASSE#",Split(stTabFmt(i),";")(1) & estilo),"#VALOR#",s1),"#LARG#",Split(stTabFmt(i),";")(0))
+						Next
+
+						s = s & "  </tr>" & vbCrLf
+
+						Prox
+					Loop
+
+					If CInt (numPag) = 0 Then
+						stRodape = Replace (Replace (Replace (stRodape, "#PANT#",""), "#PPROX#",""), "#PAG#","1")
+					End If 
+
+					If CInt(numPag) = 1 Then 
+						stRodape = Replace (stRodape,"#PANT#",stPagAntes)
+					Else
+						stRodape = Replace (stRodape,"#PANT#","<a href='" & linkPag & (numPag-1) & "'>" & stPagAntes & "</a>")
+					End If 
+
+					If CInt(numPag) = CInt(numPaginas) Then 
+						stRodape = Replace (stRodape,"#PPROX#",stPagDepois)
+					Else
+						stRodape = Replace (stRodape,"#PPROX#","<a href='" & linkPag & (numPag+1) & "'>" & stPagDepois & "</a>")
+					End If 
+
+					stRodape = Replace (Replace (stRodape,"#NCOL#",numCamposTab + Abs(temnum)),"#NREG#",numRegs)
+					stRodape = Replace (Replace (stRodape,"#PAG#",numPag),"#TPAG#",numPaginas)
+
+					s = s & stRodape
+					Tabela = s
+				Else
+					erro = "CONSULTA VAZIA!"
+				End If
+
+			Else
+				erro = "DATASET FECHADO!"
+			End If
+
+		End Function
+
+
+
+		'Inicia uma transação
+		'deve ser precedido por insereQuery (para inserir todas as queries a ser executadas)
+		'e finalizada por executaTransacao
+		public function iniciaTransacao
+
+			call db.beginTrans
+
+			transNumQueries = 0
+			numCamposQueryTrans = 0
+			flagTransacao = true
+
+		end function
+
+
+
+		'Insere uma query na transação. Elas serão executadas na sequência em que forem inseridas.
+		'As queries podem usar variáveis normalmente
+		public function insereQuery (q)
+
+			'Verifica se há uma trabsação aberta
+			if not flagTransacao then
+				erro = "NÃO EXISTE TRANSAÇÃO ABERTA"
+				exit function
+			end if
+
+			transNumQueries = transNumQueries + 1
+			ReDim Preserve stTransQueries(transNumQueries-1)
+			stTransQueries(transNumQueries-1) = q
+
+		end function
+
+
+
+		'A transação será executada
+		'Se ocorrer erro, retorna a query que deu erro
+		'Se todas as queries foram executadas, returna msgOk
+		'A mensagem de erro retorna em TBD.erro
+		public function executaTransacao
+
+			dim i
+			dim cmd 'Objeto Command
+
+
+			'Verifica se há uma trabsação aberta
+			if not flagTransacao then
+				erro = "NÃO EXISTE TRANSAÇÃO ABERTA"
+				exit function
+			end if
+
+			'Verifica se há queries a executar
+			if transNumQueries = 0 then
+				erro = "NÃO EXISTEM QUERIES A EXECUTAR"
+				flagTransacao = true
+				transNumQueries = 0
+				exit function
+			end if
+
+			'Inicializa o objeto COMMAND
+			Set cmd = Server.CreateObject("ADODB.COMMAND")
+			cmd.CommandType = 1 'adCmdText
+			cmd.ActiveConnection = db
+
+
+			'Resultado esperado da função
+			executaTransacao = msgOk
+
+
+			'Percorre todas as queries incluídas na transação
+			for transQueryAtual = 0 to transNumQueries-1
+
+				'Abre a query no modo execução
+				'O primeiro parâmetro é o alias da query
+				'O segundo parâmetro significa execução sem cursor (execute)
+				call AbreQuery (stTransQueries(transQueryAtual), 0)
+
+				'Se a query não foi executada corretamente, realiza o rollback
+				if erro <> msgOk then
+
+					'Rollback
+					db.RollbackTrans
+
+					'Retorna a query que deu erro no valor da função
+					'Para saber a descrição do erro, verifique TBD.erro
+					executaTransacao = stTransQueries(transQueryAtual)
+
+					'Sai do loop
+					exit for
+
+				end if
+
+			next
+
+			'Se não houve erro, comita a transação
+			if erro = msgOk then call db.CommitTrans
+
+			'Fecha o modo de transação
+			flagTransacao = false
+
+
+		end function
+
+	End Class
+%>

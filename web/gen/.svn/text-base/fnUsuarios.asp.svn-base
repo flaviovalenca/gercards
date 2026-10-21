@@ -1,0 +1,987 @@
+<%
+
+	function encodePWD (senha, encode)
+		dim s
+		s = senha
+		if cstr(encode) = "1" or encode = true then
+			'Codifica a senha
+			s = fnGizUnpwd (s)
+			s = fnBase64Encode (s)
+			s = fnEncBase64 (s)
+		else
+			'Decodifica a senha
+			s = fnEncBase64 (s)
+			s = fnBase64Decode (s)
+			s = fnGizPwd (s)
+		end if
+		encodePWD = s
+	end function
+
+
+	function existeLogin(lgn)
+		call BD.conecta
+		call BD.insereCampoQuery("LOGIN",lgn)
+		call BD.abreQuery("TESTALOGIN",1)
+		existeLogin = not BD.EOF
+		BD.desconecta
+	end function
+
+	function enviaAlteracaoEmail (lgn, emailAtual, novoEmail)
+		dim template
+		dim s
+
+		'Esta string será o link do e-mail. Para decodificá-la, basta
+		'seguir o caminho inverso ao da codificação. Os dados presentes
+		'são: código do usuário, atividade (ALTMAIL), e-mail atual
+		'e o novo e-mail, separados por ponto-e-vírgula.
+		s = fnEncBase64(fnBase64Encode(lgn & ";ALTMAIL;" & emailAtual & ";" & novoEmail))
+
+		'Cria o objeto de template
+		Set Template = new TTemplate
+
+		'Prepara o modelo de email
+		call Template.create( _
+			"mailMudaEmail.htm", _
+			"GED - Jucepe", _
+			mailREM, _
+			mailBCC, _
+			0, _
+			"Alteração de E-mail - Sistema GED Jucepe")
+
+		call Template.insereTag ("NOME",session("login").item("NOME"))
+		call Template.insereTag ("URL_GED",urlGED)
+		call Template.insereTag ("KEY",s)
+
+		'Insere o usuário como único destinatário
+		call Template.insereDest (session("login").item("NOME"), novoemail, "", "")
+
+		'Envia o e-mail
+		call Template.enviaEmail (1, 1)
+	end function
+
+
+	function enviaConfirmacaoCadastro (cod)
+		dim template
+		dim email
+		dim item
+
+		'carregaCadastro (cod) - Já foi feito na chamada em cg_acessso.asp
+
+		email = session ("cadastro").item("EMAIL")
+		dim s, i
+
+		'Esta string será o link do e-mail. Para decodificá-la, basta
+		'seguir o caminho inverso ao da codificação. Os dados presentes
+		'são: código do usuário, atividade (CONFMAIL) e e-mail atual,
+		'separados por ponto-e-vírgula.
+		s = fnEncBase64(fnBase64Encode(cod & ";CONFMAIL;" & email))
+
+		'Cria o objeto de template
+		Set Template = new TTemplate
+
+		'Prepara o modelo de email
+		call Template.create( _
+			"mailMudaSolicitacao.htm", _
+			"Solicitação de Serviços - Jucepe", _
+			mailREM, _
+			mailBCC, _
+			0, _
+			"Confirmação de Cadastro - Sistema de Solicitação de Serviços - Jucepe")
+
+		'Insere as tags especiais
+		call Template.insereTag ("URL_SOC",urlApp)
+		call Template.insereTag ("KEY",s)
+
+		'Insere as tags com os dados do cadastro
+		item = session("cadastro").keys
+		for i = 0 to session("cadastro").count-1
+			s = session ("cadastro").item(item(i))
+			if left (item(i),3) = "CPF" then s = fnFormataCPF(s)
+			if left (item(i),3) = "CEP" then s = left(s,5) & "-" & right(s,3)
+			call Template.insereTag (item(i), s)
+		next
+
+		'Insere o usuário como único destinatário
+		call Template.insereDest (session("cadastro").item("NOME"), session("cadastro").item("EMAIL"), "", "")
+
+		'Envia o e-mail
+		call Template.enviaEmail (1, 1)
+	end function
+
+
+	function efetivaCadastro (key)
+		dim info
+
+		efetivaCadastro = false
+
+		'Decodifica a chave enviada
+		info = fnEncBase64(key)
+		info = fnBase64Decode(info)
+		info = split(info,";")
+
+		
+		'Se a informação da chave não vier como esperada, sai
+		if ubound(info) <> 2 then exit function
+
+		'Se a requisição não for de alteração de e-mail, sai
+		if info(1) <> "CONFMAIL" then exit function
+
+		'Se não encontrar o usuário pelo código, sai
+		if not carregaCadastro (info(0)) then 
+			exit function
+		end if
+
+		'Se o registro não estiver aguardando ativação, sai. "I" = Inativo
+		if session("cadastro").item("STATUS") & "" <> "I" then
+			call limpaCadastro
+			exit function
+		end if
+
+		'Se o e-mail da chave não coincidir com o do cadastro, sai
+		if session("cadastro").item("EMAIL") & "" <> info(2) then
+			call limpaCadastro
+			exit function
+		end if
+
+		'Limpa o login
+		call login ("","")
+
+		'Finalmente, realiza a alteração de status
+		call BD.conecta
+		call BD.insereCampoQuery ("STATUS","A")
+		call BD.insereCampoQuery ("CODIGO", info(0) )
+		call BD.abreQuery("ALTERASTATUSUSUARIO",0)
+		call BD.desconecta
+
+		'Recarrega o cadastro e retorna o valor da função
+		call carregaCadastro (info(0))
+
+		response.cookies("emailSOL") = session("cadastro").item("EMAIL")
+		response.cookies("emailSOL").expires = date + 10
+
+		efetivaCadastro = true
+	end function
+
+
+	function efetivaAlteracaoEmail (key)
+		dim info
+
+		efetivaAlteracaoEmail = false
+
+		'Decodifica a chave enviada
+		info = fnEncBase64(key)
+		info = fnBase64Decode(info)
+		info = split(info,";")
+
+		'Se a informação da chave não vier como esperada, sai
+		if ubound(info) <> 3 then exit function
+
+		'Se a requisição não for de alteração de e-mail, sai
+		if info(1) <> "ALTMAIL" then exit function
+
+		'Se não encontrar o usuário pelo código, sai
+		if not carregaCadastro (info(0)) then 
+			exit function
+		end if
+
+		'Se o registro não estiver ativo, sai
+		if session("cadastro").item("ATIVO") & "" <> "1" then
+			call limpaCadastro
+			exit function
+		end if
+
+		'Se o e-mail atual não coincidir com o do cadastro, sai
+		if session("cadastro").item("EMAIL") & "" <> info(2) then
+			call limpaCadastro
+			exit function
+		end if
+
+		'Limpa o login
+		call login ("","")
+
+		'Finalmente, realiza a alteração de e-mail
+		call BD.conecta
+		call BD.insereCampoQuery ("COD_USUARIOGED",info(0))
+		call BD.insereCampoQuery ("NOVO_EMAIL",info(3))
+		call BD.abreQuery("USUARIOMUDAEMAIL",0)
+		call BD.desconecta
+
+		'Recarrega o cadastro e retorna o valor da função
+		call carregaCadastro (info(0))
+		efetivaAlteracaoEmail = true
+	end function
+
+
+
+	function alteraSenhaUsuario(cod, atual, nova)
+		dim senha, ativo
+
+		alteraSenhaUsuario = false
+
+		'Carrega o cadastro para obter a senha atual
+		call carregaCadastro (cod)
+		senha = session ("cadastro").item("SENHA") & ""
+		ativo = session ("cadastro").item("ATIVO") & ""
+		call limpaCadastro
+
+		'Se o usuário não estiver ativo, sai
+		if ativo <> "1" then exit function
+
+		'Se a senha atual não coincidir, sai
+		if senha <> atual then exit function
+
+		'Efetiva a alteração (as validações já foram feitas client-side!)
+		call BD.conecta
+		call BD.insereCampoQuery("COD_USUARIOGED",cod)
+		call BD.insereCampoQuery("NOVA_SENHA",encodePWD (nova,1))
+		call BD.abreQuery("USUARIOMUDASENHA",0)
+		call BD.desconecta
+
+		'Retorna o valor da função
+		alteraSenhaUsuario = true
+	end function
+
+
+
+	function enviaSenhaEmail (cpf)
+		dim s, i
+		dim key
+		dim template
+
+		'Abre a conexão
+		call BD.conecta
+		call BD.insereCampoQuery("CPF",cpf)
+		call BD.abreQuery("ENVIOSENHA",1)
+
+		'Valor de retorno depende da existência do email
+		enviaSenhaEmail = not BD.EOF
+
+		'Não existe o email. Sai da função
+		if BD.EOF then
+			call BD.desconecta
+			exit function
+		end if
+
+
+		if BD.valor ("STATUS") = "A" then
+			'Prepara o modelo de email para re-envio de SENHA
+			s = "mailSenhaEnvio.htm"
+		else
+			'Prepara o modelo de email para re-envio de CONFIRMAÇÃO
+			s = "mailConfEmail.htm"
+		end if
+
+		'Cria o objeto de template
+		Set Template = new TTemplate
+		call Template.create( _
+			s, _
+			"Solicitação de Serviços - Jucepe", _
+			mailREM, _
+			mailBCC, _
+			0, _
+			"Envio de Senha para Solicitação de Serviços")
+
+		'Insere as tags que podem ser substituídas no texto
+		for i = 0 to BD.numCampos-1
+			s = BD.valor(BD.NomeCampo(i))
+			if left (BD.nomeCampo(i),3) = "CPFCNPJ" then s = fnFormataCPF(s)
+			if ucase(BD.NomeCampo(i)) = "SENHA" then s = encodePWD (s, 0)
+			call Template.insereTag (BD.NomeCampo(i), s)
+		next
+
+		'Insere a chave da confirmação do email
+		key = fnEncBase64(fnBase64Encode(BD.valor("SQ_USUARIOCG") & ";CONFMAIL;" & BD.valor("EMAIL")))
+		call Template.insereTag ("KEY",key)
+		call Template.insereTag ("URL_GED",urlApp)
+
+		'Insere o usuário como único destinatário
+		call Template.insereDest (BD.valor("NOME"), BD.valor("EMAIL"), "", "")
+
+		'Envia o e-mail
+		call Template.enviaEmail (1, 1)
+
+		'Fecha a conexão
+		call BD.desconecta
+
+	end function
+
+
+	function login(lgn,pwd)
+		dim i, s1, s2
+
+		'Realiza LOGOUT
+		call session("login").removeAll
+
+		'Limpa tudo relacionado a pesquisa
+		for i = 0 to 10
+			session ("buscaCampo" & i) = ""
+		next
+
+		session("empresa").removeAll
+		session("cadastro").removeAll
+		session("ultimoNire")	= ""
+		session("buscaInfo")	= ""
+		session("tipo")			= ""
+		session("subtipo")		= ""
+		session("a")			= ""
+		session("itensCesta")	= ""
+		session("assinadosCesta") = ""
+		session("valorTotal")	= ""
+
+		if lgn & "" <> "" Then
+
+			'Prepara o banco, caso seja um LOGIN
+			call BD.conecta
+			call BD.insereCampoQuery("LOGIN",lgn)
+			call BD.insereCampoQuery("SENHA",encodePWD (pwd, 1))
+			if pwd = "__LOGINSEMSENHA__" then
+				call BD.abreQuery("LOGINSEMSENHA",1)
+			else
+				call BD.abreQuery("LOGIN",1)
+			end If
+			
+			'Configura o retorno da função
+			login = not BD.eof
+
+			'Retornou consulta em branco
+			if BD.eof then exit function
+
+			'Encontrou usuário com as especificações
+			'Carrega as informações para a session
+			s1 = ""
+			for i = 1 to BD.numCampos
+				s2 = BD.valor(BD.nomeCampo(i-1))
+				if ucase (BD.nomeCampo(i-1)) = "SENHA" then s = encodePWD (s,0)
+				call session("login").Add(BD.nomeCampo(i-1), s2)
+			next
+
+			'Informações sobre o direito do usuário
+			do until BD.EOF
+				s1 = s1 & "|" & BD.valor("COD_DIREITO") & "|"
+				BD.prox
+			loop
+			if session("login").Exists("COD_DIREITO") then call session("login").Remove("COD_DIREITO")
+			call session("login").Add("COD_DIREITO", s1)
+
+			'Informações sobre os setores dos quais o usuário é responsável
+			call BD.fechaQuery
+			call BD.limpaCamposQuery
+			call BD.insereCampoQuery("COD_USUARIOGED",session("login").item("COD_USUARIOGED"))
+			call BD.abreQuery("SETORESUSUARIORESPONSAVEL",1)
+			s1 = ""
+			do until BD.EOF
+				s1 = s1 & "|" & BD.valor("COD_SETOR") & "|"
+				BD.prox
+			loop
+			call session("login").Add("COD_SETORES", s1)
+
+'			ESPECÍFICO DO IGED
+'
+'			'Informações sobre o perfil de usuário que este usuário pode cadastrar/solicitar
+'			for i = 0 to ubound(codPerfilGerente)
+'				if session("login").item("COD_PERFIL") & "" = cstr(codPerfilGerente(i)) then
+'					session("login").item("PERFIL_GERENCIADO") = codPerfilUsuario(i)
+'				end if
+'			next
+
+			'Loga a atividade de login
+			'DOLATER: Loga o erro de senha!
+			'call logaAtividade ("L", "1")
+
+			'Fecha o banco
+			BD.desconecta
+		end if
+	end function
+
+
+	function limpaCadastro
+		call session("cadastro").removeAll
+	end function
+
+
+	function preencheCadastro (pagina)
+		dim campos, i
+
+		select case cint(pagina)
+			case 0
+				limpaCadastro
+			case 1
+				campos = "CPF,Matricula,Nome,Tipo,DataNascimento,CEP,Logradouro,Numero,Complemento,Bairro,Cidade,UF,Telefone1,Telefone2"
+			case 2 
+				campos = "Login,Email,Perfil,Orgao,Setor,Cargo"
+			case 3
+				campos = "Setores"
+			case 4
+				campos = "Senha1,ChkSenha,SenhaEmail"
+		end select
+		campos = split (campos,",")
+		for i = 0 to ubound (campos)
+			if session ("cadastro").exists(campos(i)) then session("cadastro").remove(campos(i))
+			call session ("cadastro").add(campos(i),request.form(campos(i)))
+		next
+
+	end function
+
+
+	function proxCodUsuarioGed
+		dim BD
+		Set BD = new TBD
+		call BD.conecta
+		call BD.abreQuery("ULTCODUSUARIOGED",1)
+		if BD.EOF then
+			proxCodUsuarioGed = 1
+		else
+			proxCodUsuarioGed = cint(BD.valor("COD")) + 1
+		end if
+		call BD.desconecta
+		set BD=nothing
+	end function
+
+
+	function criaUsuario
+		dim i, s
+		dim codUsuarioGed
+		dim senha
+		dim ativo
+		dim setor
+		dim responsavelaprovacao
+		dim responsavelcadastro
+
+
+		'Definição inicial do responsável pelo cadastro
+		responsavelcadastro = session("login").item("COD_USUARIOGED")
+
+		'Define se é um insert ou um update
+		if session("cadastro").item("COD_USUARIOGED") & "" = "" then
+
+			'Obtém o próximo código de usuário
+			codUsuarioGed = proxCodUsuarioGed
+			call session("cadastro").remove("COD_USUARIOGED")
+			'call session("cadastro").add("COD_USUARIOGED",codUsuarioGed)
+
+			'Cria a senha se necessário
+			if cstr(session("cadastro").item("ChkSenha")) = "1" then
+				randomize
+				senha = chr(Int(26 * Rnd + 65)) & chr(Int(26 * Rnd + 65))
+				for i = 1 to 4
+					senha = senha & chr(Int(10 * Rnd + 48))
+				next
+			else
+				senha = session("cadastro").item("Senha1")
+			end if
+
+
+			'Define o status inicial
+			if cstr(session("login").item("COD_PERFIL")) = cstr(codPerfilSU) then
+				ativo = 1 'USUÁRIO JÁ ATIVO!
+				responsavelaprovacao = session("login").item("COD_USUARIOGED")
+			else
+				if session("cadastro").item("Perfil") & "" = cstr(codPerfilUsuarioWeb) then
+					ativo = 5 'AGUARDANDO CONFIRMAÇÃO DE EMAIL (USUÁRIO WEB)
+					responsavelcadastro = 0
+					if session("cadastro").exists("COD_USUARIOGED") then
+						call session("cadastro").remove("COD_USUARIOGED")
+					end if
+					call session("cadastro").add("COD_USUARIOGED",codUsuarioGed)
+
+				elseif session("cadastro").item("SenhaEmail") & "" = "1" then
+					ativo = 2 'USUÁRIO AGUARDANDO ATIVAÇÃO E RECEBE E-MAIL COM SENHA
+				else
+					ativo = 3 'USUÁRIO AGUARDANDO ATIVAÇÃO E NÃO RECEBE E-MAIL COM SENHA
+				end if
+				responsavelaprovacao = 0
+			end if
+
+		else
+
+			'O usuário já existe: é um update
+			CodUsuarioGed = session("cadastro").item("COD_USUARIOGED")
+			senha = session("cadastro").item("SENHA")
+			ativo = session("cadastro").item("ATIVO")
+
+		end if
+
+
+		setor = session("cadastro").item("Setor")
+		if setor & "" = "" then setor = "NULL"
+
+		criaUsuario = codUsuarioGed
+
+		if session("cadastro").item("Perfil") & "" = cstr(codPerfilUsuarioWeb) then
+			'Se é um usuário WEB
+			ativo = 5
+			responsavelcadastro = 0
+		else
+			'Se o usuário não requer autorização para ser cadastrado ou
+			'se o usuário que está cadastrando é SU, torne-o ativo imediatamente
+			if  (instr (direitosPerfil(session("cadastro").item("Perfil")), "|" & codDirNecesAutCad & "|") = 0) or _
+				(session("login").item("COD_PERFIL") & "" = cstr(codPerfilSU)) then
+
+					if responsavelaprovacao & "" = "0" then responsavelaprovacao = session("login").item("COD_USUARIOGED")
+					ativo = 1
+			end if
+		end if
+
+		'Atualiza o status do ativo na sessão
+		if session("cadastro").exists("ATIVO") then call session("cadastro").remove("ATIVO")
+		call session("cadastro").add("ATIVO",ativo)
+
+
+		'Cadastra os dados básicos do usuário
+		call BD.conecta
+		call BD.insereCampoQuery("COD_USUARIOGED",CodUsuarioGed)
+		call BD.insereCampoQuery("COD_PERFIL",session("cadastro").item("Perfil"))
+		call BD.insereCampoQuery("CPF",fnLimpaCPF(session("cadastro").item("CPF")))
+		call BD.insereCampoQuery("TIPO",session("cadastro").item("Tipo"))
+		call BD.insereCampoQuery("NOME",session("cadastro").item("Nome"))
+		call BD.insereCampoQuery("DATANASCIMENTO","to_date(`" & fnFormataData(session("cadastro").item("DataNascimento"),2) & "`,`DD/MM/YYYY`)")
+		call BD.insereCampoQuery("LOGIN",session("cadastro").item("Login"))
+		call BD.insereCampoQuery("SENHA",encodePWD (senha, 1))
+		call BD.insereCampoQuery("EMAIL",session("cadastro").item("Email"))
+		call BD.insereCampoQuery("LOGRADOURO",session("cadastro").item("Logradouro"))
+		call BD.insereCampoQuery("NUMERO",session("cadastro").item("Numero"))
+		call BD.insereCampoQuery("COMPLEMENTO",session("cadastro").item("Complemento"))
+		call BD.insereCampoQuery("BAIRRO",session("cadastro").item("Bairro"))
+		call BD.insereCampoQuery("CIDADE",session("cadastro").item("Cidade"))
+		call BD.insereCampoQuery("UF",session("cadastro").item("UF"))
+		call BD.insereCampoQuery("CEP",fnLimpaCPF(session("cadastro").item("CEP")))
+		call BD.insereCampoQuery("TELEFONE1",session("cadastro").item("Telefone1"))
+		call BD.insereCampoQuery("TELEFONE2",session("cadastro").item("Telefone2"))
+		call BD.insereCampoQuery("ATIVO",ativo)
+		call BD.insereCampoQuery("RESPONSAVELCADASTRO",responsavelcadastro)
+		call BD.insereCampoQuery("DATA", "to_date(`" & fnFormataData(date,2) & "`,`DD/MM/YYYY`)")
+		call BD.insereCampoQuery("MATRICULA",session("cadastro").item("Matricula"))
+		call BD.insereCampoQuery("CARGO",session("cadastro").item("Cargo"))
+		call BD.insereCampoQuery("COD_SETOR",setor)
+		call BD.insereCampoQuery("RESPONSAVELAPROVACAO",responsavelaprovacao)
+
+		'Executa a query adequada
+'		if session("cadastro").item("COD_USUARIOGED") & "" = "" then
+'			'Cria o cadastro
+			call BD.abreQuery("CRIAUSUARIOGED",0)
+'		else
+'			'Altera o cadastro
+'			call BD.abreQuery("ALTERAUSUARIOGED",0)
+'
+'			'Limpa as responsabilidades deste usuário sobre os setores
+'			'(para posteriormente recadastrar) - O campo já está na lista
+'			call BD.insereCampoQuery("COD_USUARIOGED",CodUsuarioGed)
+'			call BD.abreQuery("LIMPARESPSETOR",0)
+'		end if
+
+		'Cadastra sua responsabilidade sobre os setores
+		if session("cadastro").item("Setores") & "" <> "" then
+			s = split (session("cadastro").item("Setores"),",")
+			for i = 0 to ubound (s)
+				call BD.limpaCamposQuery
+				call BD.insereCampoQuery ("COD_USUARIOGED",codUsuarioGed)
+				call BD.insereCampoQuery ("COD_SETOR",trim(s(i)))
+				call BD.abreQuery("MUDARESPSETOR",0)
+			next
+		end if
+
+		call BD.desconecta
+
+	end function
+
+
+	function carregaCadastro(cod)
+		dim i, s
+
+		dim BD
+		Set BD = new TBD
+
+		call limpaCadastro
+		carregaCadastro = true
+
+		call BD.conecta
+		call BD.insereCampoQuery ("SQ_USUARIOCG",cod)
+		call BD.abreQuery("EXIBEUSUARIOCG",1)
+
+
+		if BD.EOF then
+			carregaCadastro = false
+			BD.desconecta
+			exit function
+		end if
+
+		'Carrega os dados do usuário na sessão
+		call limpaCadastro
+		call session("Cadastro").add("Codigo",			cod)
+		call session("Cadastro").add("TIPOPESSOA",		BD.valor("TIPOPESSOA") )
+		call session("Cadastro").add("CPFCNPJ",			BD.valor("CPFCNPJ") )
+		call session("Cadastro").add("IDENTIDADE",		BD.valor("IDENTIDADE") )
+		call session("Cadastro").add("ORGAOEXPEDIDOR",	BD.valor("ORGAOEXPEDIDOR") )
+		call session("Cadastro").add("UFIDENTIDADE",	BD.valor("UFIDENTIDADE") )
+		call session("Cadastro").add("NOME",			BD.valor("NOME") )
+		call session("Cadastro").add("CEP",				BD.valor("CEP") )
+		call session("Cadastro").add("LOGRADOURO",		BD.valor("LOGRADOURO") )
+		call session("Cadastro").add("NUMERO",			BD.valor("NUMERO") )
+		call session("Cadastro").add("COMPLEMENTO",		BD.valor("COMPLEMENTO") )
+		call session("Cadastro").add("BAIRRO",			BD.valor("BAIRRO") )
+		call session("Cadastro").add("CIDADE",			BD.valor("CIDADE") )
+		call session("Cadastro").add("UFUSUARIOCG",		BD.valor("UFUSUARIOCG") )
+		call session("Cadastro").add("FONERESIDENCIAL",	BD.valor("FONERESIDENCIAL") )
+		call session("Cadastro").add("RAMALRESIDENCIAL",BD.valor("RAMALRESIDENCIAL") )
+		call session("Cadastro").add("FONECOMERCIAL",	BD.valor("FONECOMERCIAL") )
+		call session("Cadastro").add("RAMALCOMERCIAL",	BD.valor("RAMALCOMERCIAL") )
+		call session("Cadastro").add("CELULAR",			BD.valor("CELULAR") )
+		call session("Cadastro").add("EMAIL",			BD.valor("EMAIL") )
+		call session("Cadastro").add("SENHA",			BD.valor("SENHA") )
+		call session("Cadastro").add("STATUS",			BD.valor("STATUS") )
+		call session("Cadastro").add("RECEBEEMAIL",		BD.valor("RECEBEEMAIL") )
+		call session("Cadastro").add("RECEBESMS",		BD.valor("RECEBESMS") )
+		call BD.desconecta
+	end function
+
+
+	function geraPDFUsuario(cod)
+		dim BD
+		dim folder, files, file
+		dim PDF
+		dim i, s
+
+		geraPDFUsuario = ""
+
+		'Inicializa a classe
+		set PDF = new TprintPDF
+		call PDF.inicializa(Application ("stCamDados") & "PDF","impConfCadastro.pdf")
+
+		'Apaga os arquivos criados até ONTEM
+		set folder = FSO.getFolder(Server.MapPath("temp\"))
+		set files = folder.files
+		for each file in files
+			If  (ucase(left(file.name,9)) = "INSCRICAO") and _
+				(ucase(right(file.name,4)) = ".PDF") and _
+				(Int(file.dateCreated) < Int(Date)) Then file.delete
+		Next
+
+		'Abre o banco e busca os dados
+		Set BD = new TBD
+		call BD.conecta
+		call BD.insereCampoQuery ("COD_USUARIOGED", cod)
+		call BD.abreQuery("FORMULARIOUSUARIO",1)
+
+		if BD.EOF then
+			BD.desconecta
+			geraPDFUsuario = false
+			exit function
+		end if
+
+		'Insere as variáveis no objeto PDF
+		for i = 0 to BD.numCampos-1
+			s = BD.valor(BD.NomeCampo(i))
+			if left (BD.nomeCampo(i),3) = "CPF" then s = fnFormataCPF(s)
+			if left (BD.nomeCampo(i),3) = "CEP" then s = left(s,5) & "-" & right(s,3)
+			if ucase(BD.NomeCampo(i)) = "SENHA" then s = encodePWD (s, 0)
+			call PDF.insereVariavel (BD.NomeCampo(i),s)
+		next
+
+		s = BD.valor("logradouro")
+		if BD.valor ("numero") & "" <> "" then s = s & ", " & BD.valor("numero")
+		if BD.valor ("complemento") & "" <> "" then s = s & " / " & BD.valor("Complemento")
+		call PDF.insereVariavel ("ENDERECO",s)
+
+		'Monta e salva o arquivo
+		call PDF.montaArquivo ("impConfCadastro.dat")
+		call PDF.GravaArquivo( Server.MapPath("temp\Inscricao" & cod & ".pdf"))
+
+		geraPDFUsuario = "Inscricao" & cod & ".pdf"
+
+		BD.desconecta
+		set PDF = nothing
+
+'		set dict = Server.CreateObject("Scripting.Dictionary")
+'		for i = 0 to BD.numCampos-1
+'			s = BD.valor(BD.NomeCampo(i))
+'			if left (BD.nomeCampo(i),3) = "CPF" then s = fnFormataCPF(s)
+'			if left (BD.nomeCampo(i),3) = "CEP" then s = left(s,5) & "-" & right(s,3)
+'			if ucase(BD.NomeCampo(i)) = "SENHA" then s = encodePWD (s, 0)
+'			call dict.add("#" & BD.NomeCampo(i) & "#", s)
+'		next
+'
+'		s = BD.valor("logradouro")
+'		if BD.valor ("numero") & "" <> "" then s = s & ", " & BD.valor("numero")
+'		if BD.valor ("complemento") & "" <> "" then s = s & " / " & BD.valor("Complemento")
+'
+'		call dict.Add("#ENDERECO#",s)
+'
+'		'Cria os objetos
+'		Set Pdf = Server.CreateObject("Persits.Pdf")
+'		'pdf.regKey = "IWezOVo910L2aohOu8RPLk5o1OOlYHOi6SkOBrzw+YdnUdy4v8j3Z9+9hX8sFNshLRDhXGl7kI97"
+'		Set Doc = Pdf.openDocument(Application ("stCamDados") &"modelos\impConfCadastro.pdf")
+'
+'		Set Canvas = Doc.Pages(1).Canvas
+'		Set Param = Pdf.CreateParam
+'
+'		if Doc is nothing then
+'			response.write ("ERRO!")
+'			response.end
+'		end if
+'
+'		Set iniFile = new TIniFile
+'		If not iniFile.Create (application ("stCamDados") & "iniFiles\impConfCadastro.ini") Then 
+'			exit function
+'		end if
+'
+'		i = 1
+'		s = iniFile.ReadValue ("IMP","I" & i,"*")
+'		
+'		while s <> "*"
+'			inst = split(s,",")
+'
+'			select case inst(0)
+'				case "F"
+'					set Font = Doc.Fonts(inst(1))
+'					fontSize = inst(2)
+'				case "T"
+'					Param("x") = inst(2) * 72 /25.4
+'					Param("y") = Doc.Pages(1).height - (inst(3) * 72 /25.4)
+'
+'					if dict.exists (inst(1)) then inst(1) = dict.item(inst(1)) & ""
+'					Canvas.DrawText inst(1), Param, Font
+'			end select
+'
+'			i = i + 1
+'			s = iniFile.ReadValue ("IMP","I" & i,"*")
+'		wend
+'
+'		geraPDFUsuario = Doc.Save( Server.MapPath("temp\Inscricao" & cod & ".pdf"))
+'
+'		set Pdf = nothing
+'		set iniFile = nothing
+'		set Pdf = nothing
+'		set Doc = nothing
+'		set Canvas = nothing
+'		set Param = nothing
+'		set Font = nothing
+'		set dict = nothing
+	end function
+
+
+	'Envia um email com o formulário de abertura de conta para o gerente
+	'ou com o feedback da solicitação. Valores para tipo:
+	'0 = Conta não autorizada
+	'1 = Conta autorizada
+	'2 = Envia o PDF com o formulário
+	'3 = Envia o login e a senha para o novo usuário
+	function enviaMailPdf(cod,tipo)
+		Dim Template
+		Dim BD
+
+		Dim modelo, titulo
+
+		Set BD = new TBD
+		call BD.conecta
+		call BD.insereCampoQuery ("COD_USUARIOGED", cod)
+		call BD.abreQuery("FORMULARIOUSUARIO",1)
+
+		select case cint(tipo)
+			case 0
+				modelo = "mailRecusaCadastro.htm"
+				titulo = "Recusa de Cadastro no Sistema de Imagens - GED JUCEPE"
+			case 1
+				modelo = "mailAutorizaCadastro.htm"
+				titulo = "Autorização de Cadastro no Sistema de Imagens - GED JUCEPE"
+			case 2
+				modelo = "mailConfCadastro.htm"
+				titulo = "Solicitação de Cadastro no Sistema de Imagens - GED JUCEPE"
+			case 3
+				modelo = "mailSenhaCadastro.htm"
+				titulo = "Seu Cadastro no Sistema de Imagens - GED JUCEPE"
+		end select
+
+
+		Set Template = new TTemplate
+
+		'Prepara o modelo de email
+		call Template.create( _
+			modelo, _
+			"GED - Jucepe", _
+			mailGED, _
+			mailBCC, _
+			0, _
+			titulo)
+
+		'Insere as tags que podem ser substituídas no texto
+		for i = 0 to BD.numCampos-1
+			s = BD.valor(BD.NomeCampo(i))
+			if left (BD.nomeCampo(i),3) = "CPF" then s = fnFormataCPF(s)
+			if left (BD.nomeCampo(i),3) = "CEP" then s = left(s,5) & "-" & right(s,3)
+			if ucase(BD.NomeCampo(i)) = "SENHA" then s = encodePWD (s, 0)
+			call Template.insereTag (BD.NomeCampo(i), s)
+		next
+
+		'Insere uma tag adicional: com o endereço montado
+		s = BD.valor("logradouro")
+		if BD.valor ("numero") & "" <> "" then s = s & ", " & BD.valor("numero")
+		if BD.valor ("complemento") & "" <> "" then s = s & " / " & BD.valor("Complemento")
+		call Template.insereTag ("ENDERECO", s)
+
+		'Insere as tags dos emails de feedback
+		call Template.insereTag ("OBS",request.form("obs"))
+		call Template.insereTag ("MOTIVO",request.form("motivo"))
+
+		'Insere o PDF com anexo
+		if tipo = 2 then call template.insereAttach (Server.MapPath("temp\" & geraPDFUsuario(cod)))
+
+		'Insere o destinatário:
+		if tipo <> 3 then
+			'O responsável pelo cadastro
+			call Template.insereDest (BD.valor("NOME_RESP"), BD.valor("EMAIL_RESP"), "", "")
+		else
+			'O usuário cadastrado
+			call Template.insereDest (BD.valor("NOME"), BD.valor("EMAIL"), "", "")
+		end if
+
+		'Envia o e-mail
+		call Template.enviaEmail (1, 1)
+
+		set Template = nothing
+
+		call BD.desconecta
+		set BD = nothing
+	end function
+
+
+	'Loga atividades do usuário
+	'tipo: (L)ogin, (I)magem, (N)ire, (A)utenticidade
+	'info:		L - Cod_usuarioged,Status
+	'			I - Seqüencial da imagem
+	'			N - NIRE da empresa
+	'			A - Controle, Email
+	function logaAtividade (tipo, info)
+		dim BD
+		dim primLogin
+		dim primConsImg
+		dim primConsNire
+		dim primConsAut
+
+		Set BD = new TBD
+		call BD.conecta
+
+		'Verifica se há algum login
+		call BD.abreQuery ("LOGNUMLOGINS",1)
+		primLogin = (cint(BD.valor("QUANT")) = 0)
+		call BD.fechaQuery
+		call BD.limpaCamposQuery
+
+		'Verifica se há alguma consulta a imagem
+		call BD.abreQuery ("LOGNUMCONSIMG",1)
+		primConsImg = (cint(BD.valor("QUANT")) = 0)
+		call BD.fechaQuery
+		call BD.limpaCamposQuery
+
+		'Verifica se há alguma consulta a NIRE
+		call BD.abreQuery ("LOGNUMCONSNIRE",1)
+		primConsNire = (cint(BD.valor("QUANT")) = 0)
+		call BD.fechaQuery
+		call BD.limpaCamposQuery
+
+		'Verifica se há alguma consulta de autenticidade
+		call BD.abreQuery ("LOGNUMCONSAUT",1)
+		primConsAut = (cint(BD.valor("QUANT")) = 0)
+		call BD.fechaQuery
+		call BD.limpaCamposQuery
+
+		'Prepara os campos genéricos
+		call BD.insereCampoQuery("SEQUENCIALLOG",session ("login").item("SQ_LOGINUSUARIOGED"))
+		call BD.insereCampoQuery("COD_USUARIOGED",session("login").item("COD_USUARIOGED"))
+		call BD.insereCampoQuery("EMAIL",session("login").item("EMAIL"))
+		call BD.insereCampoQuery("DATAHORA","to_date(`" & fnFormataData(date,2) & " " & fnFormataHora(time,2) & "`,`DD/MM/YYYY HH24:MI`)")
+		call BD.insereCampoQuery("IP",session ("remote_addr"))
+		call BD.insereCampoQuery("STATUS",info)
+
+
+		select case tipo
+
+			case "L"
+				if primLogin then
+					'Não há logins. Crie o primeiro
+					call BD.insereCampoQuery ("SEQ","1")
+				else
+					'Já há logins. Crie o próximo
+					call BD.insereCampoQuery ("SEQ","(SELECT MAX(SQ_LOGINUSUARIOGED) FROM LOGINUSUARIOGED)+1")
+				end if
+
+				'Insere o log
+				call BD.abreQuery ("LOGLOGIN",0)
+
+				'Obtém o seqüencial do LOG
+				call BD.limpaCamposQuery
+				call BD.insereCampoQuery ("COD_USUARIOGED",session("login").item("COD_USUARIOGED"))
+				call BD.abreQuery ("LOGSEQUENCIAL",1)
+				if session("login").exists("SQ_LOGINUSUARIOGED") then call session("login").remove("SQ_LOGINUSUARIOGED")
+				call session ("login").add("SQ_LOGINUSUARIOGED",BD.valor ("SQ_LOGINUSUARIOGED"))
+
+				call BD.fechaQuery
+
+			case "I"
+				if primConsImg then
+					'Não há consultas a imagens. Crie a primeira
+					call BD.insereCampoQuery ("SEQ","1")
+				else
+					'Já há consultas a imagens. Crie a próxima
+					call BD.insereCampoQuery ("SEQ","(SELECT MAX(SQ_CONSULTAIMAGEM) FROM CONSULTAIMAGEM)+1")
+				end if
+
+				'Insere o log
+				call BD.insereCampoQuery("SEQUENCIAL",info)
+				call BD.abreQuery ("LOGCONSIMG",0)
+
+				'Retorna o valor de SQ_CONSULTAIMAGEM
+				call BD.limpaCamposQuery
+				call BD.insereCampoQuery ("COD_USUARIOGED",session("login").item("COD_USUARIOGED"))
+				call BD.abreQuery ("LOGCONSIMGRET",1)
+				logaAtividade = "IMG_" & BD.valor ("SQ_CONSULTAIMAGEM") & _
+								"_" & session("login").item("COD_USUARIOGED") & ".TIF"
+				call BD.fechaQuery
+
+			case "N"
+				if primConsNire then
+					'Não há consultas a imagens. Crie a primeira
+					call BD.insereCampoQuery ("SEQ","1")
+				else
+					'Já há consultas a imagens. Crie a próxima
+					call BD.insereCampoQuery ("SEQ","(SELECT MAX(SQ_CONSULTANIRE) FROM CONSULTANIRE)+1")
+				end if
+
+				'Insere o log
+				call BD.insereCampoQuery("NR_NIRE",info)
+				call BD.abreQuery ("LOGCONSNIRE",0)
+
+			case "A"
+				if primConsAut then
+					'Não há consultas de autenticidade. Crie a primeira
+					call BD.insereCampoQuery ("SEQ","1")
+				else
+					'Já há consultas de autenticidade. Crie a próxima
+					cal BD.insereCampoQuery ("SEQ","(SELECT MAX(SQ_CONSULTAAUTENTICIDADE) FROM CONSULTAAUTENTICIDADE)+1")
+				end if
+
+				'Insere o log
+				call BD.insereCampoQuery("CONTROLE",split(info,",")(0))
+				call BD.insereCampoQuery("EMAIL",split(info,",")(1))
+				call BD.abreQuery ("LOGCONSAUT",0)
+
+		end select
+		if BD.erro <> msgOk then response.write ("<b>Erro!</b><br />" & BD.erro & "<br /><br />")
+
+		call BD.desconecta
+
+	end function
+
+
+	function textoTermosUso
+
+		dim Arq
+		dim sLinhas
+
+		Set Arq = FSO.OpenTextFile (Application ("stCamDados") & "modelos\txtTermosUso.txt",1,false)
+		sLinhas = Arq.ReadAll
+		Arq.Close
+
+		textoTermosUso = sLinhas
+
+	end function
+%>

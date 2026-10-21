@@ -1,0 +1,104 @@
+<!--#include file="fnGen.asp"-->
+<!--#include file="fnIniFiles.asp"-->
+<!--#include file="fnBD.asp"-->
+
+<%
+	BD.Conecta
+
+	Call BD.insereCampoQuery ("CEP",request.queryString ("cep"))
+	Call BD.AbreQuery ("BUSCA_CEP", 1)
+
+'response.write (BD.erro)
+
+	If BD.EOF And request.queryString("f") = "json" Then
+		response.clear
+		response.write ("{""logradouro"" : """"}")
+		BD.fechaquery
+		BD.desconecta
+		response.end
+	End if
+
+	if BD.Erro = msgOk and not BD.EOF Then
+		If request.queryString("f") = "json" Then
+			Dim resp
+			response.clear
+			Response.Charset="ISO-8859-1"
+			resp =	"{ " & _
+					"'logradouro' : '" & BD.Valor("logradouro") & "', " & _
+					"'bairro' : '" & BD.Valor("bairro") & "', " & _
+					"'cidade' : '" & BD.Valor("cidade") & "', " & _
+					"'uf' : '" & BD.Valor("uf") & "' " & _
+					"}"
+			response.write (Replace(resp,"'",""""))
+			BD.fechaquery
+			BD.desconecta
+
+			response.end
+		End if
+%>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+ <HEAD>
+  <TITLE> Busca de CEP! </TITLE>
+  <META NAME="Generator" CONTENT="EditPlus">
+  <META NAME="Author" CONTENT="Leandro Ferreira">
+  <META NAME="Keywords" CONTENT="">
+  <META NAME="Description" CONTENT="">
+ </HEAD>
+
+ <BODY>
+	<script language="javaScript">
+		var i
+
+		parent.document.forms['<%=request("frm")%>'].<%=request("logr")%>.value='<%=BD.Valor("logradouro")%>';
+		parent.document.forms['<%=request("frm")%>'].<%=request("bairro")%>.value='<%=BD.Valor("bairro")%>';
+		parent.document.forms['<%=request("frm")%>'].<%=request("cidade")%>.value='<%=BD.Valor("cidade")%>';
+		parent.document.forms['<%=request("frm")%>'].<%=request("uf")%>.value='<%=BD.Valor("uf")%>';
+
+		for (i=0;i<parent.document.forms['<%=request("frm")%>'].<%=request("uf")%>.length ;i++ )
+		{
+			if(parent.document.forms['<%=request("frm")%>'].<%=request("uf")%>.options[i].text == '<%=BD.Valor("uf")%>'){
+				parent.document.forms['<%=request("frm")%>'].<%=request("uf")%>.selectedIndex = i
+			}
+
+		}
+	</script>
+<%
+	end if
+%>
+	<script language="javaScript">
+		var i
+/*		parent.document.<%=request("frm")%>.<%=request("logr")%>.style.background = "white";
+		parent.document.<%=request("frm")%>.<%=request("bairro")%>.style.background = "white";
+		parent.document.<%=request("frm")%>.<%=request("cidade")%>.style.background = "white";
+		parent.document.<%=request("frm")%>.<%=request("uf")%>.style.background = "white";
+*/
+		parent.document.forms['<%=request("frm")%>'].<%=request("logr")%>.disabled = false;
+		parent.document.forms['<%=request("frm")%>'].<%=request("bairro")%>.disabled = false;
+		parent.document.forms['<%=request("frm")%>'].<%=request("cidade")%>.disabled = false;
+		parent.document.forms['<%=request("frm")%>'].<%=request("uf")%>.disabled = false;
+<%
+	if BD.EOF then
+%>
+		parent.document.forms['<%=request("frm")%>'].<%=request("logr")%>.value='';
+		parent.document.forms['<%=request("frm")%>'].<%=request("bairro")%>.value='';
+		parent.document.forms['<%=request("frm")%>'].<%=request("cidade")%>.value='';
+		parent.document.forms['<%=request("frm")%>'].<%=request("uf")%>.value='';
+
+		parent.document.forms['<%=request("frm")%>'].<%=request("logr")%>.focus();
+<%
+	else
+%>
+		parent.document.forms['<%=request("frm")%>'].<%=request("num")%>.focus();
+<%
+	end if
+%>
+	</script>
+<%
+	BD.FechaQuery
+	BD.Desconecta
+	set BD = nothing
+%>
+
+ </BODY>
+</HTML>

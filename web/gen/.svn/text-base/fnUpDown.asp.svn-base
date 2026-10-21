@@ -1,0 +1,78 @@
+<!--#include file='fnGEN.asp'--> 
+<!--#include file='fnGerais.asp'--> 
+<!--#include file="clsUpload.asp"-->
+<%
+	'Função auxiliar para download
+	Function getBinaryFile(stFilePath) 
+
+		Dim TypeBinary, oStream
+		TypeBinary = 1
+
+		Set oStream = Server.CreateObject("ADODB.Stream")
+		oStream.Open
+		oStream.Type = TypeBinary
+		oStream.LoadFromFile stFilePath
+
+		getBinaryFile = oStream.read
+		Set oStream = Nothing
+
+	End Function 
+
+
+	'act = download
+	If fnQueryString ("act") = "download" then
+
+		Dim stFile
+
+		If Not FSO.fileExists(fnQueryString ("a")) then
+
+			if FSO.fileExists(fnQueryString ("p") & "\" & fnQueryString ("a")) then
+				stFile = fnQueryString ("p") & "\" & fnQueryString ("a")
+			else
+				stFile = session("stCamWeb") & fnQueryString ("p") & "\" & fnQueryString ("a")
+'				stFile = server.mapPath(fnQueryString ("p") & "/" & fnQueryString ("a"))
+			end if
+		Else
+			stFile = fnQueryString ("a")
+		End if
+
+		If Not FSO.fileExists (stFile) Then
+			'DOLATER
+			response.write ("ARQUIVO NÃO ENCONTRADO: " & stfile)
+			response.end
+		End If
+
+		Response.Buffer = True
+		Response.Clear
+
+		Response.AddHeader "content-disposition", "attachment; filename=" & fnQueryString("n")
+		Response.ContentType = "application/force-download"
+		Response.BinaryWrite getBinaryFile(stFile)
+		response.flush
+		Response.End
+
+	End If
+
+
+	'act = upload
+	'DOLATER: Não pode haver upload a partir de um form com vários itens??
+	If fnQueryString ("act") = "upload" then
+
+		'Instancia o objeto de upload
+		Dim upl
+		set upl = New clsUpload
+
+		'Salva o arquivo na pasta correta
+		upl.fields(fnQueryString("campo")).SaveAs fnQueryString("p") & "\" & fnQueryString("a")
+
+		'Finaliza
+		Set upl = Nothing
+
+		'Redir
+		If fnQueryString("redir") & "*" <> "*" then
+			response.redirect (fnQueryString("redir"))
+		End If
+		
+	End If
+
+%>

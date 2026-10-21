@@ -1,0 +1,42 @@
+
+*********************************************************************************************
+						ORACLE 19C
+*********************************************************************************************
+
+docker  run --name oracle19c -p 1521:1521 -p 5500:5500 -v /C/Sistemas/oracle-docker/oracledata:/opt/oracle/oradata oracle/database:19.3.0-ee
+
+-- Criar a senha do banco 
+docker exec oracle19c ./setPassword.sh bor@nei24
+
+-- Verificar log do oracle
+docker logs oracle19c
+
+-- Parar o banco
+docker stop oracle19c
+
+-- Subir o banco
+docker start oracle19c
+
+-- Conectar via sqlplus
+sqlplus sys/boranei24@"localhost:1521/orclpdb1" as sysdba
+
+conn sys/boranei24@"localhost:1521/orclpdb1" as sysdba
+
+*********************************************************************************************
+						ORACLE 11G
+*********************************************************************************************
+
+docker  run --name oracle11g --shm-size=2g -p 1521:1521 -p 5500:5500 -v /C/Sistemas/oracle-docker/oracledata:/opt/oracle/oradata oracleinanutshell/oracle-xe-11g
+
+
+-- logar com a senha oracle
+-- depois alterar através do comando 
+sqlplusw /nolog
+ALTER USER sys IDENTIFIED BY boranei24;
+
+-- Conectar via sqlplus
+
+conn sys/boranei24@localhost:1521/XE as sysdba
+
+
+

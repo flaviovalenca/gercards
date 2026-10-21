@@ -1,0 +1,13 @@
+<table border="1">
+<%
+for each x in request.servervariables
+%>
+<tr>
+	<td><%=x%></td>
+	<td><%=replace(request.servervariables(x),chr(10),"<br>")%></td></tr>
+<%
+next
+%>
+</table>
+
+X_FORWARDED_FOR: <%=request.ServerVariables("HTTP_X_FORWARDED_FOR")%>

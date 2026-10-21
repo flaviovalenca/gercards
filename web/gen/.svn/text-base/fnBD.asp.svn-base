@@ -1,0 +1,146 @@
+<%
+
+'+-----------------------------------------------------------------------+
+'|	Arquivo:	fnBD.asp
+'|	Descrição:	Rotinas de Acesso a Dados Locais/Remotos e montagem
+'|				de diálogos dinâmicos (tecnologia JUCEPE)
+'|	Data:		27-30/05/2007
+'|	Execução:	Leandro Ferreira (leandrowferreira@gmail.com)
+'|	
+'|	Descrição:
+'|	
+'|	Este módulo define e instancia as classes de acesso a dados à base
+'|	de dados, a arquivos-texto e a dados em servidor remoto. As classes
+'|	estão documentadas abaixo:
+'|	
+'|	
+'|	Classe TDB
+'|
+'|	Automatiza os processos de conexão a banco de dados, montagem e
+'|	execução de queries e apresentação de dados em tabelas formatadas
+'|	com controle de paginação.
+'|
+'|	Propriedades Públicas:
+'|	
+'|	NumCampos    Inteiro   Indica o número de campos que a consulta retornou
+'|	NomeCampo()  Array     Indica o nome dos campos em array baseado em zero.
+'|	                       Seus parâmetros são:
+'|	                        - Índice    Inteiro   Baseado em zero, indica
+'|	                                              qual campo se deseja pes-
+'|	                                              quisar
+'|	numRegs      Inteiro   Número de registros retornados na consulta
+'|	Erro         String    Texto com mensagem de erro. Em caso de sucesso, a
+'|	                       mensagem padrão de Ok é armazenada
+'|	Query        String    Texto com a query montada, já com as tags devida-
+'|	                       mente substituídas
+'|	EOF, BOF     Boolean   Indica que o cursor encontra no fim ou início do
+'|	                       recordset, respectivamente
+'|	Valor()      String    Retorna o valor do campo enviado como parâmetro.
+'|	                       Em caso de erro, retorna a respectiva mensagem.
+'|	                       Seus parâmetros são:
+'|	                        - stCampo   String    Nome do campo do qual se
+'|	                                              deseja obter o valor
+'|	Tabela()     String    Retorna um texto formatado em HTML com uma ta-
+'|	                       bela pronta para exibição, baseada em um layout
+'|	                       pré-definido.
+'|	                       Seus parâmetros são:
+'|	                        - formato   String    Entrada que indica os
+'|	                                              elementos de formatação
+'|	                                              a serem usados (veja do-
+'|	                                              cumentação sobre arquivo
+'|	                                              formatTab.ini)
+'|	                        - titulo    String    O texto que surgirá na
+'|	                                              linha de título da tabela
+'|	                        - temNum    Boolean   Indica se será criada uma
+'|	                                              coluna à esquerda com um
+'|	                                              campo de numeração
+'|	                        - numPag    Inteiro   Indica qual página apre-
+'|	                                              sentar. Deve ser zero se
+'|	                                              não houver necessidade de
+'|	                                              paginar o resultado
+'|	                        - itensPPag Inteiro   Informa o número de itens
+'|	                                              por página. É ignorado
+'|	                                              caso numPag seja zero
+'|	                        - linkPag   String    Endereço que deve ser
+'|	                                              chamado no caso de uma
+'|	                                              mudança de página. Sempre
+'|	                                              será anexado a este link
+'|	                                              o número da página desti-
+'|	                                              no do link
+'|	                        - linkItem  String    Endereço que deve ser
+'|	                                              chamado no caso de se
+'|	                                              escolher um item através
+'|	                                              de um clique. Os itens
+'|	                                              selecionados para serem
+'|	                                              links são enviados por
+'|	                                              parâmetro (queryString)
+'|	
+'|	Métodos Públicos:
+'|	
+'|	Conecta      Tenta realizar a conexão com o banco de dados, seguindo o
+'|	             instruções do arquivo de configuração inicial (veja docu-
+'|	             mentação sobre o arquivo config.ini). A propriedade Erro
+'|	             informa um possível erro durante o processo
+'|	Desconecta   Fecha totalmente a conexão com o banco, limpando todos os
+'|	             resultados e zerando o cursor. A propriedade Erro informa
+'|	             um possível erro durante o processo
+'|	Reinicia     Prepara a conexão para realizar outra query, mantendo a
+'|	             conexão com o banco ativa
+'|	AbreQuery()  Abre ou executa uma query selecionada. A propriedade Erro
+'|	             informa um possível erro durante o processo
+'|	             Seus parâmetros são:
+'|	              - stAlias   String    Informa qual query do dicionário
+'|	                                    será executada (veja documentação
+'|	                                    sobre o arquivo queries.txt).
+'|	              - Abre      Inteiro   Indica se é para abrir (1) ou só
+'|	                                    para executar (0) a query. No caso
+'|	                                    de abertura, o cursor é iniciali-
+'|	                                    zado no primeiro registro, caso
+'|	                                    haja algum
+'|	FechaQuery   Fecha uma query que esteja aberta, liberando o cursor
+'|	Prox         Tenta avançar para o próximo registro e atualiza EOF
+'|	Ant          Tenta recuar para o registro anterior e atualiza BOF
+'|	LimpaCamposQuery    Limpa os campos que irão substituir as tags na
+'|	                    query selecionada (Ver documentação sobre o
+'|	                    arquivo queries.txt)
+'|	InsereCampoQuery()  Insere um campo que irá substituir uma tag na
+'|	                    query selecionada
+'|	                    Seus parâmetros são:
+'|	                     - stNome    String    Nome da tag a substituir
+'|	                     - stValor   String    Valor a ser posicionado
+'|	LimpaCamposTab      Limpa os campos que irão ser apresentados pela
+'|	                    propriedade Tabela
+'|	InsereCampoTab()    Insere um campo pata ser apresentado pela pro-
+'|	                    priedade Tabela
+'|	                    Seus parâmetros são:
+'|	                     - stNome    String   Nome do campo na query
+'|	                     - stLabel   String   Título da coluna na ta-
+'|	                                          bela a ser apresentada
+'|	                     - LargCampo Inteiro  Largura da coluna
+'|	                     - Estilo    String   Estilo CSS que terá a
+'|	                                          célula do campo. Sempre
+'|	                                          será adicionado ao nome
+'|	                                          deste estilo os sufixos
+'|	                                          "Par" ou "Impar"
+'|	                     - ChaveLink Boolean  Indica se este campo
+'|	                                          será um link
+'|	
+'|	(c) 2007 - Leandro Ferreira
+'+-----------------------------------------------------------------------+
+
+	'Inclui arquivos com o código-fonte
+%>
+	<!--#include file='fnBD_TBD.asp'--> 
+	<!--#include file='fnBD_TDialogo.asp'--> 
+	<!--#include file='fnBD_TConRem.asp'--> 
+<%
+	'Instancia as classes
+	Dim BD
+	Set BD = new TBD
+
+	Dim Dialogo
+	Set Dialogo = new TDialogo
+
+	Dim ConRem
+	Set ConRem = new TConRem
+%>

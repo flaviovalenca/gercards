@@ -1,0 +1,3016 @@
+<%
+	function sqUsuarioLogado
+		Dim BD
+		dim cookie
+
+		Set BD = new TBD
+
+		sqUsuarioLogado = ""
+
+		'Primeiro teste: verifica se a sessão do usuário existe
+		if session("Login").exists("SQ_USUARIOCG") then
+			sqUsuarioLogado = session("Login").item("SQ_USUARIOCG")
+
+			'Existe: atualiza a duração do cookie em mais uma hora
+			response.cookies("login").Expires = date + time + (1/24)
+
+			exit function
+		end if
+
+		'Segundo teste: verifica a existência do cookie
+		if request.cookies("login").HasKeys then
+
+			cookie = request.cookies("login")("chave") & ""
+
+			'O cookie existe: carrega novamente as informações do usuário na sessão
+			if cookie <> "" then
+
+				'Ambiente de testes
+				'call BD.ConectaDireto("dbjpe01_jucsrvdb02", "", "dae", "swse4wr2", "ORACLE")
+				'Ambiente de produção
+				Call BD.conectaDireto("dbjpe01", "dbjpe01", "dae", "swse4wr2", "ORACLE")
+
+				'Limpa o dicionário de login
+				call session("Login").removeAll
+
+				call BD.insereCampoQuery ("CHAVELOGIN",cookie)
+				call BD.abreQuery ("USUARIO_BUSCA_CHAVELOGIN",1)
+
+				'Se encontrou a chave de login...
+				if not BD.EOF then
+					'...e se a data de validade for maior que a data atual...
+					if fnFormataData(BD.valor("VALIDADECHAVE"),15) > fnFormataData((date+time),15) then
+						'...e se o IP é o mesmo que gerou o login...
+'						if BD.valor("IPLOGIN") = request.serverVariables("REMOTE_ADDR") then
+
+							'...carrega os dados na sessão
+							call session("Login").add("SQ_USUARIOCG",BD.valor("SQ_USUARIOCG"))
+							call session("Login").add("NOME",BD.valor("NOME"))
+							call session("Login").add("CPFCNPJ",fnFormataSoNumeros(BD.valor("CPFCNPJ")))
+							call BD.fechaQuery
+
+							'Atualiza a duração do cookie por mais uma hora
+							response.cookies("login").Expires = date + time + (1/24)
+
+							'A função retorna o sequencial do usuário
+							sqUsuarioLogado = session("Login").item("SQ_USUARIOCG")
+
+'						end if
+					end if
+				end if
+			end if
+		end if
+	end function
+
+
+	Function fnQueryString (qs)
+		fnQueryString = request.queryString (qs)
+	End Function
+
+	'Protocolo: String 9 dígitos
+	'Data: enviar string no formato DD/MM/AAAA
+	function geraChave (protocolo, data)
+
+		dim result
+		result = ""
+
+		protocolo = right ("000000000" & protocolo, 9)
+
+		result = result & right("00000" & hex(right(protocolo,5)), 5)	'Últimos 5 dígitos do protocolo		- 2,5 bytes
+		result = result & right("0000" & hex(left(protocolo,4)), 4)		'Primeiros 4 dígitos do protocolo	- 2,0 bytes
+		result = result & right("000" & hex(right(data,4)), 3)			'Ano								- 1,5 bytes
+		result = result & right("00" & hex(mid(data,4,2)),2)			'Mês								- 1,0 byte
+		result = result & right("00" & hex(left(data,2)),2)				'Dia								- 1,0 byte
+
+		geraChave = result
+
+	end Function
+	
+	Function fnGetFileName(arquivo)
+		Dim lsPath, arPath, chDiv
+
+		If InStr (arquivo,"\") = 0 Then chDiv = "/" Else chDiv = "\"
+
+		' Split the path along the \s. This creates an
+		' one-dimensional array
+		arPath = Split(arquivo, chDiv)
+
+		' The last item in the array contains the file name
+		fnGetFileName =arPath(UBound(arPath))
+	End Function
+
+
+	Function  fnDateToSec
+		fnDateToSec = cdbl((date + time)* 24 * 60 * 60)
+	End Function
+
+
+	Function fnGetFilePath(arquivo)
+		Dim lsPath, arPath, chDiv
+
+		If InStr (arquivo,"\") = 0 Then chDiv = "/" Else chDiv = "\"
+
+		' Split the path along the \s. This creates an
+		' This creates an one-dimensional array 
+		arPath = Split(arquivo, chDiv)
+
+		' Set the last item in the array to blank string
+		' (The last item actually is the file name)
+		If UBound(arPath) >= 0 Then arPath(UBound(arPath)) = ""
+
+		' Join the items in the array. This will
+		' give you the virtual path of the file
+		fnGetFilePath = Join(arPath, chDiv)
+	End Function
+
+
+	'Função que retorna uma data extensa de hoje
+	function fnDataDeHoje
+		Dim retorno
+		Dim stSemana		'Nomes dos dias da semana
+		Dim stMes			'Nomes dos dias do mês
+
+		stSemana = Array ("","Domingo","Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado")
+		stMes = Array ("","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro")
+
+'		retorno = semana(weekday (date)) &  ", " & fnFormataData(date,8)
+		retorno = fnFormataData(date,8)
+		fnDataDeHoje = retorno
+	end function
+
+
+	'Retorna somente os algarismos do parâmetro
+	function fnFormataSoNumeros (byval valor)
+		dim i,s		
+		
+		s = ""	
+
+		for i = 1 to len (valor)
+			if mid (valor,i,1) >= "0" and mid (valor,i,1) <= "9" then s = s & mid (valor,i,1)
+		Next
+
+		fnFormataSoNumeros = s
+	end function
+
+
+	function fnFormataData (data,formato)
+		'formato 1: DD/MM/AA
+		'formato 2: DD/MM/AAAA
+		'formato 3: DD/MM
+
+		'formato 4: DD/MMM/AA
+		'formato 5: DD/MMM/AAAA
+
+		'formato 6: DD/MMMM/AA
+		'formato 7: DD/MMMM/AAAA
+
+		'formato 8: DD de MMMM de AAAA
+		'formato 9: DD de MMMM
+
+		'formato 10: MMMM de AAAA
+		'formato 11: MM/DD/AAAA
+		'formato 12: AAAAMMDD
+		'formato 13: DDMMAAAA
+		'formato 14: AAAA-MM-DD
+		'formato 15: AAAA-MM-DD HH:MM:SS
+		dim d,m,a
+		Dim stMes
+
+		stMes = Array ("","janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro")
+		
+		if isdate (data) then
+
+			d = day (data)
+			m = month (data)
+			a = year (data)
+
+			'Formata o dia
+			if len (d) = 1 then d = "0" & d
+
+			'Formata o mês
+			if formato = 1 or formato = 2 or formato = 3 or formato=11 or formato=12 or formato=13 or formato=14 or formato = 15 then
+				if len (m) = 1 then m = "0" & m
+			elseif formato = 4 or formato = 5 then
+				m = left(stmes(cint(m)),3)
+			else
+				m = stmes (m)
+			end if
+
+			'Formata o ano
+			if formato = 1 or formato = 4 or formato = 6 then
+				a = right (a,2)
+			end if
+
+			if formato = 3 then
+				fnFormataData = d & "/" & m
+			elseif formato = 8 then
+				fnFormataData = d & " de " & m & " de " & a
+			elseif formato = 9 then
+				fnFormataData = d & " de " & m
+			elseif formato = 10 then
+				fnFormataData = m & " de " & a
+			elseif formato = 11 then
+				fnFormataData = m & "/" & d & "/" & a
+			elseif formato = 12 then
+				fnFormataData = a & m & d
+			elseif formato = 13 then
+				fnFormataData = d & m & a
+			elseif formato = 14 then
+				fnFormataData = a & "-" & m & "-" & d
+			elseif formato = 15 then
+				fnFormataData = a & "-" & m & "-" & d & " " & fnFormataHora(data,1)
+			else
+				fnFormataData = d & "/" & m & "/" & a
+			end if
+
+		else
+			fnFormataData = data
+		end if
+	end function
+
+
+	function fnFormataHora (hora, formato)
+		'Formato 1: HH:MM:SS
+		'Formato 2: HH:MM
+		'Formato 3: HHhMM
+		'Formato 4: HHhMMmin
+		'Formato 5: HHhMMminSSs
+		'Formato 6: HHMM
+		dim h,m,s
+
+		if isdate (hora) then
+			h = hour (hora)
+			m = minute (hora)
+			s = second (hora)
+
+			if len (h) = 1 then h = "0" & h
+			if len (m) = 1 then m = "0" & m
+			if len (s) = 1 then s = "0" & s
+
+			if formato = 1 then
+				fnFormataHora = h & ":" & m & ":" & s
+			elseif formato = 2 then
+				fnFormataHora = h & ":" & m
+			elseif formato = 3 then
+				fnFormataHora = h & "h" & m
+			elseif formato = 4 then
+				fnFormataHora = h & "h" & m & "min"
+			elseif formato = 5 then
+				fnFormataHora = h & "h" & m & "min" & s & "s"
+			elseif formato = 6 then
+				fnFormataHora = h & m
+			end if
+
+		else
+			fnFormataHora = hora
+		end if
+	end function
+
+
+	'Insere os pontos e o hífen no CPF
+	function fnFormataCPF (ByVal cpf)
+		While Len(cpf) < 11
+			cpf = "0" & cpf
+		wend
+		if len (cpf) = 11 then
+			cpf = left (cpf,3) & "." & mid (cpf,4,3) & "." & mid (cpf,7,3) & "-" & right (cpf,2)
+		end if
+		fnFormataCPF = cpf
+	end function
+
+
+	'Insere os pontos, a barra e o hífen no CNPJ
+	function fnFormataCNPJ (ByVal cnpj)
+		While Len(cnpj) < 14
+			cnpj = "0" & cnpj
+		wend
+		if cnpj = "00000000000000" then exit function
+		if len (cnpj) = 14 then
+			cnpj = left (cnpj,2) & "." & mid (cnpj,3,3) & "." & mid (cnpj,6,3) & "/" & mid (cnpj,9,4) & "-" & right (cnpj,2)
+		end if
+		fnFormataCNPJ = cnpj
+	end function
+
+	'Função que identifica se um campo que está sendo digitado é CPF ou CNPJ
+	'DOLATER - Função inacabada
+	function fnIdCpfCnpj(valor)
+		dim s
+		s = fnFormataSoNumeros (valor)
+		if len (s) = 11 then 
+			fnIdCpfCnpj = "CPF" 
+		elseif len(s) = 14 then
+			fnIdCpfCnpj = "CNPJ"
+		else
+			fnIdCpfCnpj = ""
+		end if
+	end function
+
+
+
+	'Insere os pontos e o hífen na Inscrição Estadual
+	function fnFormataIE (ByVal ie)
+		while len(ie) < 14
+			ie = "0" & ie
+		wend
+		if ie = "00000000000000" then exit function
+		if len (ie) = 14 then
+			ie = left (ie,2) & "." & mid (ie,3,1) & "." & mid (ie,4,3) & "." & mid (ie,7,7) & "-" & right (ie,1)
+		end if
+		fnFormataIE = ie
+	end function
+
+
+
+	'Rotina auxiliar na formatação
+	function fnSubstLetra(st,ps,lt)
+		dim s1,s,i
+		s1 = ""
+		for i = 1 to len (st) 
+			if i = ps then s1 = s1 & lt else s1 = s1 & mid (st,i,1)
+		next
+		fnSubstLetra = s1
+	end function
+
+
+	'Formatação maiúsculas/minúsculas
+	function fnPrettyPrint (s)
+		dim result, s1, i, p
+		result = ""
+		s = trim(s) & " "
+		while s<> " "'len(result) < 20's <> " "
+			p = instr (s," ")
+			s1 = lcase (left (s,p-1))
+			s = trim(mid (s,p,len(s))) + " "
+
+			if len (s1) > 1 then
+				for i = 2 to len (s1)
+					p = instr ("ÁÉÍÓÚÂÊÎÔÛÀÈÌÒÙÃÕÄËÏÖÜÇ", mid (s1,i,1))
+					if p > 0 then s1 = fnSubstLetra (s1,i,mid ("áéíóúâêîôûàèìòùãõäëïöüç",p,1))
+				next
+			end if
+
+			'Conectores em minúsculas
+			if instr (" e da de do das dos y em ",s1) = 0 then
+				s1 = fnSubstLetra (s1,1, ucase(left(s1,1)))
+			end if
+
+			'Numeração romana em maiúsculas
+			if instr (" ii iii iv v vi vii viii ix x xi xii xiii xiv xv xvi xvii xviii xix xx ",s1) <> 0 then
+				s1 = UCase(s1)
+			end if
+
+			if mid (s1,2,1) = "'" and len (s1) > 2 then fnSubstLetra s1,3,ucase (mid(s1,3,1))
+
+			result = result & s1 & " "
+
+		wend
+		result = trim (result & " ")
+
+		'Funções específicas dfa aplicação
+		result = replace (result,"S/a","S/A")
+		result = replace (result,"S.a.","S.A.")
+		result = replace (result,"Epp","EPP")
+		result = replace (result," Uf"," UF")
+
+		fnPrettyPrint = result
+	end function
+
+
+	'Verifica a existência de um objeto
+	Function fnTestaObjeto(comIdentity)
+		Dim s
+
+		On Error Resume Next
+		fnTestaObjeto = False
+		Err.Clear
+		Set s = Server.CreateObject( comIdentity )
+		If Err = 0 Then fnTestaObjeto = True
+		Set s = Nothing
+		Err.clear
+	End Function
+
+
+	function fnBase64Encode(str)
+		Dim b64, i, n1, n2, t, s, L
+		b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+		For I = 1 To Len(str) Step 3
+			if Mid(str, I + 1, 1) = "" then N1 = 0 else N1 = asc(Mid(str, I + 1, 1))
+			if Mid(str, I + 2, 1) = "" then N2 = 0 else N2 = asc(Mid(str, I + 2, 1))
+			T = &H10000 * Asc(Mid(str, I, 1)) + &H100 * N1 + N2
+			T = Oct(T)
+			T = String(8 - Len(T), "0") & T
+			s = Mid(b64, CLng("&o" & Mid(T, 1, 2)) + 1, 1) + Mid(b64, CLng("&o" & Mid(T, 3, 2)) + 1, 1) + Mid(b64, CLng("&o" & Mid(T, 5, 2)) + 1, 1) + Mid(b64, CLng("&o" & Mid(T, 7, 2)) + 1, 1)
+			fnBase64Encode = fnBase64Encode + s
+		Next
+		L = 3 - ( len(str) mod 3 )
+		if L < 3 then fnBase64Encode = Left(fnBase64Encode , len(fnBase64Encode) - L) & string(L,"=")
+	end function
+
+
+	function fnBase64Decode(str)
+		dim b64, start,db,n,b,c,d,s,out
+		b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+		for start = 1 to len(str) step 4
+			db = 3
+			n = 0
+			for b = 0 to 3
+				c = mid(str,b+start,1)
+				if c="=" then
+					db = db-1
+					d = 0
+				else
+					d = instr(b64,c)-1
+				end if
+				if d = -1 then exit function
+				n = 64*n+d
+			next
+			n = hex(n)
+			n = string(6 - len(n),"0") & n
+			out = chr(CByte("&H"&mid(n,1,2))) & chr(CByte("&H"&mid(n,3,2))) & chr(CByte("&H"&mid(n,5,2)))
+			fnBase64Decode = fnBase64Decode & left(out,db) 
+		next
+	end function
+
+
+	Function fnURLEncode(sConvert)
+		fnURLEncode = server.urlEncode (sConvert)
+	End Function
+
+
+	Function fnURLDecode(sConvert)
+		Dim aSplit
+		Dim sOutput
+		Dim I
+
+		If IsNull(sConvert) Then
+			fnURLDecode = ""
+			Exit Function
+		End If
+		
+		' convert all pluses to spaces
+		sOutput = REPLACE(sConvert, "+", " ")
+		
+		' next convert %hexdigits to the character
+		aSplit = Split(sOutput, "%")
+		
+		If IsArray(aSplit) And UBound(aSplit) >= 0 Then
+			sOutput = aSplit(0)
+			For I = 0 to UBound(aSplit) - 1
+				sOutput = sOutput & _
+					Chr("&H" & Left(aSplit(i + 1), 2)) &_
+					Right(aSplit(i + 1), Len(aSplit(i + 1)) - 2)
+			Next
+		End If
+		
+		fnURLDecode = sOutput
+	End Function
+
+
+	Function fnHTMLEncode(byVal st)
+		Dim htmlItems, i
+
+		'Caracteres Markup Significant
+		st = Replace (st, Chr(34),"&quot;")
+		st = Replace (st, Chr(38),"&amp;")
+		st = Replace (st, Chr(60),"&lt;")
+		st = Replace (st, Chr(62),"&gt;")
+
+		'Caracteres ISO 8859-1
+		htmlItems = "nbsp;iexcl;cent;pound;curren;yen;brvbar;sect;uml;copy;ordf;" & _
+					"laquo;not;shy;reg;macr;deg;plusmn;sup2;sup3;acute;micro;para;" & _
+					"middot;cedil;sup1;ordm;raquo;frac14;frac12;frac34;iquest;Agrave;" & _
+					"Aacute;Acirc;Atilde;Auml;Aring;AElig;Ccedil;Egrave;Eacute;Ecirc;" & _
+					"Euml;Igrave;Iacute;Icirc;Iuml;ETH;Ntilde;Ograve;Oacute;Ocirc;" & _
+					"Otilde;Ouml;times;Oslash;Ugrave;Uacute;Ucirc;Uuml;Yacute;THORN;" & _
+					"szlig;agrave;aacute;acirc;atilde;auml;aring;aelig;ccedil;egrave;" & _
+					"eacute;ecirc;euml;igrave;iacute;icirc;iuml;eth;ntilde;ograve;" & _
+					"oacute;ocirc;otilde;ouml;divide;oslash;ugrave;uacute;ucirc;uuml;" & _
+					"yacute;thorn;yuml"
+
+		htmlItems = Split(htmlItems,";")
+
+		For i = 0 To UBound (htmlItems)
+			st = Replace (st, Chr(i+160), "&" & htmlItems(i) & ";")
+		Next
+
+		fnHTMLEncode = st
+	End Function
+
+
+	Function fnHTMLDecode(byVal st)
+		Dim htmlItems, i
+
+		'Caracteres ISO 8859-1
+		htmlItems = "nbsp;iexcl;cent;pound;curren;yen;brvbar;sect;uml;copy;ordf;" & _
+					"laquo;not;shy;reg;macr;deg;plusmn;sup2;sup3;acute;micro;para;" & _
+					"middot;cedil;sup1;ordm;raquo;frac14;frac12;frac34;iquest;Agrave;" & _
+					"Aacute;Acirc;Atilde;Auml;Aring;AElig;Ccedil;Egrave;Eacute;Ecirc;" & _
+					"Euml;Igrave;Iacute;Icirc;Iuml;ETH;Ntilde;Ograve;Oacute;Ocirc;" & _
+					"Otilde;Ouml;times;Oslash;Ugrave;Uacute;Ucirc;Uuml;Yacute;THORN;" & _
+					"szlig;agrave;aacute;acirc;atilde;auml;aring;aelig;ccedil;egrave;" & _
+					"eacute;ecirc;euml;igrave;iacute;icirc;iuml;eth;ntilde;ograve;" & _
+					"oacute;ocirc;otilde;ouml;divide;oslash;ugrave;uacute;ucirc;uuml;" & _
+					"yacute;thorn;yuml"
+
+		htmlItems = Split(htmlItems,";")
+
+		For i = 0 To UBound (htmlItems)
+			st = Replace (st, "&" & htmlItems(i) & ";", Chr(i+160))
+		Next
+
+		'Caracteres Markup Significant
+		st = Replace (st,"&quot;", Chr(34))
+		st = Replace (st,"&amp;",  Chr(38))
+		st = Replace (st,"&lt;",   Chr(60))
+		st = Replace (st,"&gt;",   Chr(62))
+
+		fnHTMLDecode = st
+	End Function
+
+
+	'Decodifica senha do GIZ
+	Function fnGizPwd(cod)
+		Dim ltr,i,s
+		fnGizPwd = ""
+		s = ""
+		ltr = "0123456789ABCDEFGHIJLMNOPQRSTUVX"
+
+		'Número par de "dígitos"
+		If cod = "" Or Len (cod) Mod 2 <> 0 Then Exit function
+
+		'Transforma cada par de "dígitos" em um caractere
+		i = 1
+		Do Until i > Len (cod)
+			s = s & Chr( (InStr (ltr,Mid(cod,i,1))-1) * 32 + InStr (ltr,Mid(cod,i+1,1)) )
+			i = i + 2
+		loop
+
+		fnGizPwd = s
+	End Function
+
+
+	'Codifica senha do GIZ
+	Function fnGizUnpwd(senha)
+		Dim ltr, i, s
+		s = ""
+		ltr = "0123456789ABCDEFGHIJLMNOPQRSTUVX"
+
+		'Monta o retorno, inserindo um par de "dígitos" para cada caractere
+		i = 1
+		Do Until i > Len (senha)
+			s = s & Mid (ltr, ((Asc (Mid(senha,i,1))-1)  \  32) + 1, 1)   '(3)
+			s = s & Mid (ltr, ((Asc (Mid(senha,i,1))-1) Mod 32) + 1, 1)   '(1)
+			i = i + 1
+		Loop 
+
+		fnGizUnpwd = s
+	End Function
+
+
+	'Retorna o número de dias de um determinado mês
+	Function fnDiasMes (mes, ano)
+		Dim num
+		num = 30
+
+		mes = CInt (mes) : ano = CInt(ano)
+
+		If mes = 1 Or mes = 3 Or mes = 5 Or mes = 7 Or mes = 8 Or mes = 10 Or mes = 12 Then num = 31
+
+		If mes = 2 Then
+			If ano Mod 4 = 0 Then
+				If ano Mod 100 = 0 Then
+					If ano Mod 1000 = 0 Then
+						num = 29
+					Else
+						num = 28
+					End If
+				Else
+					num = 29
+				End If
+			Else
+				num = 28
+			End If
+		End If
+		fnDiasMes = num
+	End function
+
+
+	'Rotina centralizada de envio de email
+	'Usando CDONTS
+	Sub fnMailSendCDONTS (mailFrom, mailTo, mailBCC, mailSubject, mailBody, mailType, attach)
+		Dim oEmail
+		dim i
+
+		response.write ("FROM: " & mailFrom & "<br>To: " & mailTo & "<br> BCC: " & mailBCC & "<br>Subject: " & _
+						mailSubject & "<br>Body: " & mailBody & "<br>Type: " & mailType & "<br>Attach: " & attach)
+		response.end
+
+		Set oEmail = CreateObject("CDONTS.NewMail")
+		oEmail.From = mailFrom
+		oEmail.To = mailTo
+		oEmail.BCC = mailBCC
+		oEmail.subject = mailSubject
+		oEmail.Importance = 1
+		oEmail.bodyFormat = mailType	'0: HTML; 1: Plain Text
+		oEmail.MailFormat = 0			'0: Mime; 1: default Plain Text
+		oEmail.body  = mailBody
+
+		if attach <> "" then
+			attach = split(attach, ";")
+			for i = 0 to ubound(attach)
+				if FSO.fileExists(attach(i)) then
+					call oEmail.attachFile (attach(i))
+				end if
+			next
+		end if
+
+		if session ("_ultMailEnv") <> mailTo & mailSubject then
+			oEmail.Send
+			session ("_ultMailEnv") = mailTo & mailSubject
+		end if
+
+		Set oEmail = Nothing
+	End Sub
+
+
+	'Rotina centralizada de envio de email
+	'Usando CDOSYS
+	Sub fnMailSend	(mailFrom, mailTo, mailBCC, mailSubject, mailBody, mailType, attach)
+
+		Dim objCDOSYSMail, objCDOSYSCon, i
+
+		'configurações do componente CDOSYS
+		Set objCDOSYSMail = Server.CreateObject("CDO.Message")
+
+		'Cria o objeto para configuração do SMTP
+		Set objCDOSYSCon = Server.CreateObject ("CDO.Configuration")
+
+		'SMTP / CDO / Timeout
+		objCDOSYSCon.Fields("http://schemas.microsoft.com/cdo/configuration/smtpserver") = "smtp.ati.pe.gov.br"
+		objCDOSYSCon.Fields("http://schemas.microsoft.com/cdo/configuration/smtpserverport")= 25
+		objCDOSYSCon.Fields("http://schemas.microsoft.com/cdo/configuration/sendusing") = 2
+		objCDOSYSCon.Fields("http://schemas.microsoft.com/cdo/configuration/smtpconnectiontimeout") = 30
+		objCDOSYSCon.Fields.update
+
+		'Anexos
+		if attach <> "" then
+			attach = split(attach, ";")
+			for i = 0 to ubound(attach)
+				if FSO.fileExists(attach(i)) then
+					objCDOSYSMail.AddAttachment (attach(i))
+				end if
+			next
+		end if
+
+		'Atualiza a configuração do CDOSYS para o envio do e-mail
+		Set objCDOSYSMail.Configuration = objCDOSYSCon
+
+		'Informações de header
+		objCDOSYSMail.From = mailFrom
+		objCDOSYSMail.ReplyTo = mailFrom
+		objCDOSYSMail.To = mailTo
+		objCDOSYSMAIL.BCC = mailBCC
+		objCDOSYSMail.Subject = mailSubject
+
+		If mailType = 0 Then
+			objCDOSYSMail.HtmlBody = mailBody
+			objCDOSYSMail.fields.update
+		Else
+			objCDOSYSMail.TextBody = mailBody
+		End If
+
+		'Envia o e-mail
+		objCDOSYSMail.Send
+		'response.write (objCDOSYSMail.From & "<BR>" & objCDOSYSMail.ReplyTo & "<BR>" & objCDOSYSMail.To & "<BR>" & objCDOSYSMAIL.BCC & "<BR>" & objCDOSYSMail.Subject & "<BR>")
+
+		'destrói os objetos
+		Set objCDOSYSMail = Nothing
+		Set objCDOSYSCon = Nothing
+	End Sub
+
+
+	Function SaveBinaryData(FileName, ByteArray)
+		Const adTypeBinary = 1
+		Const adSaveCreateOverWrite = 2
+
+		'Create Stream object
+		Dim BinaryStream
+		Set BinaryStream = CreateObject("ADODB.Stream")
+
+		'Specify stream type - we want To save binary data.
+		BinaryStream.Type = adTypeBinary
+
+		'Open the stream And write binary data To the object
+		BinaryStream.Open
+		BinaryStream.Write ByteArray
+
+		'Save binary data To disk
+		BinaryStream.SaveToFile FileName, adSaveCreateOverWrite
+	End Function
+
+
+	Function fnNomeRand (tam)
+		Dim i, s
+		s = ""
+		For i = 1 To tam
+			s = s + Chr (Int(26 * Rnd + 65))
+		next
+		fnNomeRand = s
+	End Function
+	
+	Function fnCriapQueryString (st)
+
+		Dim i
+
+		st = Split(Replace(st,"?","&"),"&")
+		session ("pqs") = ""
+
+		For i = 0 To UBound (st)
+			If i = 0 Then 
+				fnCriapQueryString = st(0)
+			Else
+				If session ("pqs") <> "" Then session ("pqs") = session ("pqs")  & "&"
+				session ("pqs") = session ("pqs")  & st(i)
+			End If
+		Next
+
+		If UBound (st) = 0 Then ReDim psQueryString(0) '??
+
+	End Function 
+
+
+	Function pqueryString (item)
+		Dim i, psQueryString
+
+		psQueryString = Split (session ("pqs"), "&")
+
+		For i = 0 To UBound (psQueryString)
+			If psQueryString(i) <> "" then
+				If UCase (item) = UCase(Split(psQueryString(i),"=")(0)) Then
+					pqueryString = Split(psQueryString(i),"=")(1)
+				End If
+			End If
+		next
+	End Function
+
+
+	Function fnFormataTamArq (tam)
+
+		If tam < 1000 Then
+			fnFormataTamArq = tam & " bytes"
+		ElseIf tam < 1000000 Then
+			fnFormataTamArq = Int(tam/10.24)/100 & " KB"
+		ElseIf tam < 1000000000 Then
+			fnFormataTamArq = Int(tam/1024/10.24)/100 & " MB"
+		Else
+			fnFormataTamArq = Int(tam/1024/1024/10.24)/100 & " GB"
+		End If
+	End function
+	
+
+	function fnFormataValor (valor)
+
+		fnFormataValor = trim(replace(formatcurrency(valor),"R$",""))
+
+	end function
+
+
+	Function fnEncBase64 (st)
+		dim i, s1, s2
+		s1 = ""
+
+		for i = 1 to len(st)
+			s2 = mid (st,i,1)
+			if s2 >= "A" and s2 <= "Z" then 
+				s2 = lcase(s2)
+			else
+				s2 = ucase(s2)
+			end if
+			s1 = s2 & s1
+		next
+
+		if instr(s1,"=") > 0 then
+			fnEncBase64 = replace(s1,"=","-")
+		else
+			fnEncBase64 = replace(s1,"-","=")
+		end if
+
+	end function
+
+
+	' Description:
+	'   Sorts a dictionary by either key or item
+	' Parameters:
+	'   objDict - the dictionary to sort
+	'   intSort - the field to sort (1=key, 2=item)
+	' Returns:
+	'   A dictionary sorted by intSort
+	Function SortDictionary(objDict, intSort)
+		' declare constants
+		Const dictKey  = 1
+		Const dictItem = 2
+
+		' declare our variables
+		Dim strDict()
+		Dim objKey
+		Dim strKey,strItem
+		Dim X,Y,Z
+
+		' get the dictionary count
+		Z = objDict.Count
+
+		' we need more than one item to warrant sorting
+		If Z > 1 Then
+			' create an array to store dictionary information
+			ReDim strDict(Z,2)
+			X = 0
+			' populate the string array
+			For Each objKey In objDict
+				strDict(X,dictKey)  = CStr(objKey)
+				strDict(X,dictItem) = CStr(objDict(objKey))
+				X = X + 1
+			Next
+
+			' perform a a shell sort of the string array
+			For X = 0 To (Z - 2)
+				For Y = X To (Z - 1)
+					If StrComp(strDict(X,intSort),strDict(Y,intSort),vbTextCompare) > 0 Then
+						strKey  = strDict(X,dictKey)
+						strItem = strDict(X,dictItem)
+						strDict(X,dictKey)  = strDict(Y,dictKey)
+						strDict(X,dictItem) = strDict(Y,dictItem)
+						strDict(Y,dictKey)  = strKey
+						strDict(Y,dictItem) = strItem
+					End If
+				Next
+			Next
+
+			' erase the contents of the dictionary object
+			objDict.RemoveAll
+
+			' repopulate the dictionary with the sorted information
+			For X = 0 To (Z - 1)
+				objDict.Add strDict(X,dictKey), strDict(X,dictItem)
+			Next
+		End If
+	End Function
+
+
+	'*************************************************************************
+	'FUNÇÕES ESPECÍFICAS DA APLICAÇÃO - JUCEPE
+	'*************************************************************************
+
+	function fnNomeEvento (codEvento)
+		Dim BD
+		Set BD = new TBD
+		call BD.conecta
+		call BD.insereCampoQuery ("CO_EVENTO",codEvento)
+		call BD.abreQuery("NOMEEVENTO",1)
+		if BD.EOF then fnNomeEvento = "" else fnNomeEvento = BD.valor ("NO_EVENTO")
+		call BD.fechaQuery
+	end function
+
+
+	function populaTipoEmpresa
+		dim s
+		s = ""
+		call BD.conecta
+		call BD.insereCampoQuery("GRUPOSOLICITACAO","%")
+		call BD.abreQuery ("TIPOEMPRESA",1)
+		do until BD.EOF
+			s = s & "<option value='" & BD.valor ("GS_GrupoSolicitacao") & "' "
+			if session ("DAE").exists("codTipoEmp") then 
+				if cstr(BD.valor ("GS_GrupoSolicitacao")) = cstr(session ("DAE").item("codTipoEmp")) then s = s & "selected='selected' "
+			end if
+			s = s & ">" & BD.valor ("GS_Descricao") & "</option>"
+			BD.prox
+		loop
+		BD.fechaQuery
+		populaTipoEmpresa = s
+	end function
+
+
+	function populaAto
+		dim s,s1
+		s = ""
+
+		call BD.conecta
+		call BD.insereCampoQuery("DATA",fnFormataData(date,2))
+		call BD.insereCampoQuery("GRUPOSOLICITACAO",session ("DAE").item("codTipoEmp"))
+		if (not session("DAE").exists("codTipoEmp")) or (session("DAE").item("codTipoEmp") & "" = "") then
+			call BD.abreQuery ("ATOSTODOS",1)
+		else
+			call BD.abreQuery ("ATOS",1)
+		end if
+
+		do until BD.EOF
+			s = s & "<option value='" & BD.valor ("A_CO_ATO") & "' "
+			if session ("DAE").exists("codAto") then 
+				if BD.valor ("A_CO_ATO") & "" = session ("DAE").item("codAto") & "" then s = s & "selected='selected' "
+			end If
+			'Marreta da miséra para adaptar descrições (o famoso 'IF')
+			s1 = fnprettyprint(BD.valor ("A_NO_ATO"))
+			s1 = Replace (s1,"(até 50.000 Linhas)","")
+			s1 = Replace (s1,"Cancelamento - Prefeitura Municipal","Cancelamento - Prefeitura Municipal (Correção de endereço)")
+			s = s & ">" & s1 & "</option>"
+
+			BD.prox
+		loop
+		BD.fechaQuery
+		populaAto = s
+	end function
+
+
+	function populaNatureza
+		dim s, i
+		Dim codTipo, codNat
+		s = ""
+
+		'Tabela para associação de tipo com natureza
+		codTipo = Split ("1,2,3,4,5,6",",")
+		codNat  = Split ("213-5,,204-6,206-2,214-3,",",")
+
+		call BD.conecta
+		call BD.insereCampoQuery("DATA",fnFormataData(date,2))
+		call BD.insereCampoQuery("CO_ATO",session ("DAE").item("codAto"))
+		call BD.abreQuery ("NATUREZA",1)
+		do until BD.EOF
+			s = s & "<option value='" & BD.valor ("NJ_CO_NATUREZA_JURIDICA") & "' "
+			if session ("DAE").exists("codNatureza") then 
+				if BD.valor ("NJ_CO_NATUREZA_JURIDICA") & "" = session ("DAE").item("codNatureza") & "" then s = s & "selected='selected' "
+				'Verifica se há uma concordância entre o tipo de empresa selecionado e a natureza jurídica
+				If InStr (s,"selected='selected'") <= 0 Then
+					For i = 0 To UBound (codTipo)
+						If BD.valor ("NJ_CO_NATUREZA_JURIDICA") = codNat(i) And cstr(session ("DAE").item("codTipoEmp")) = cstr(codTipo(i)) Then
+							s = s & "selected='selected' "
+							Exit for
+						End if
+					next
+				End if
+			end if
+			s = s & ">" & fnprettyprint(BD.valor ("NJ_NO_NATUREZA_JURIDICA")) & "</option>"
+			BD.prox
+		loop
+		BD.fechaQuery
+		populaNatureza = s
+	end function
+
+
+	function fnFormataNire (ByVal nire)
+		While Len(nire) < 11
+			nire = "0" & nire
+		Wend
+		If nire = "00000000000" Then nire = ""
+
+		if len (nire) = 11 then
+			nire = left (nire,2) & "." & mid (nire,3,1) & "." & mid (nire,4,7) & "-" & right (nire,1)
+		end if
+		fnFormataNire = nire
+	end function
+
+	function fnFormataCEP (ByVal CEP)
+		dim cepPassado
+		cepPassado = cStr(CEP)
+		While Len(cepPassado) < 8
+			cepPassado = "0" & cepPassado
+		Wend
+		If cepPassado = "00000000" Then cepPassado = ""
+		if len (cepPassado) = 8 then
+			cepPassado = left (cepPassado,2) & "." & mid (cepPassado,3,3) & "-" & mid (cepPassado,6,3) 
+		end if
+		fnFormataCEP = cepPassado
+	end function
+
+	function fnFormataProtocolo (byval proto)
+
+		dim i, protocolo
+
+		protocolo = fnFormataSoNumeros (proto)
+		while len(protocolo) < 9
+			protocolo = "0" & protocolo
+		Wend
+		fnFormataProtocolo = left (protocolo,2) & "/" & mid (protocolo,3,6) & "-" & right (protocolo,1)
+	end function
+
+
+	'Verifica a validade de um protocolo
+	function fnValidaProtocolo (byval proto)
+		dim soma, tam, dv
+		soma = 0
+
+		proto = fnFormataSoNumeros(proto)
+		if len(proto) <> 9 then 
+			fnValidaProtocolo = false
+			exit function
+		end if
+
+		for tam = 1 to 8
+			soma = soma + (10 - tam) * cint(mid(proto,tam,1))
+		next
+		dv = 11 - (soma mod 11) : if dv >= 10 then dv = 0
+
+		fnValidaProtocolo = (cint(mid(proto,9,1)) = cint(dv))
+	end function
+
+
+	'Função auxiliar para a geração de códigos de barras
+	function mod10(n)
+		dim i, p, m, s
+
+		s = 0
+		p = 2
+
+		for i = len(n) to 1 step -1
+			m = cint(mid (n,i,1)) * p
+			if m >= 10 then m = (m \ 10) + (m mod 10)
+			s = s + m
+			p = 3 - p '2,1,2,1,...
+		next
+
+		s = 10 - (s mod 10)
+		if s > 9 then s = 0
+
+		mod10 = s
+
+	end function
+
+
+	'Retorna uma string com o código de barras (tipo = 0) ou a linha digitável (tipo = 1)
+	function codBarras (byval valor, byval protocolo, byval sequencial, byval dataVenc, tipo)
+		dim st,s1,s2,s3,s4
+		valor = round(cdbl(valor) *100)
+		protocolo = cstr(protocolo)
+		sequencial = cint(sequencial)
+		dataVenc = fnFormataData (dataVenc,13)
+		tipo = cint (tipo)
+
+		codBarras = ""
+		if (valor <= 0) or (len (protocolo) <> 9) then exit function
+
+		valor = right ("00000000000" & cstr(valor),11)
+		protocolo = right ("000000000" & fnFormataSoNumeros (protocolo), 9)
+		sequencial = cint (sequencial)
+
+		st = ""
+		st = st & "8"			'Produto						( 1 posição)
+		st = st & "5"			'Segmento						( 1 posição)
+		st = st & "6"			'Valor embutido 'Módulo 10'		( 1 posição)
+		st = st & "_"			'DV geral - calculado depois	( 1 posição)
+		st = st & valor			'Valor do DAE					(11 posições)
+		st = st & "0223"		'Código da JUCEPE				( 4 posições)
+		st = st & dataVenc		'Data de vencimento DDMMAAAA	( 8 posições)
+		st = st & protocolo		'Número do protocolo			( 9 posições)
+		st = st & sequencial	'Número sequencial	(0-base)	( 1 posição)
+		st = st & "0000000"		'Complemento do bloco			( 7 posições)
+
+		s1 = left (st,3)
+		s2 = right (st,40)
+		st = s1 & mod10(s1 & s2) & s2
+
+		if tipo = 0 then
+			'Só a string - a ser usada no código de barras
+			codBarras = st
+		else
+			'String formatada - linha digitável
+			s1 = mid (st,01,11)
+			s2 = mid (st,12,11)
+			s3 = mid (st,23,11)
+			s4 = mid (st,34,11)
+
+			codBarras = s1 & "-" & mod10(s1) & " " & _
+						s2 & "-" & mod10(s2) & " " & _
+						s3 & "-" & mod10(s3) & " " & _
+						s4 & "-" & mod10(s4)
+		end if 
+	end function
+
+
+	'Retorna o valor de um ato, dados o código, a natureza, o evento, 
+	'o número de vias adicionais e se será por via postal (true/false)
+	function valorAto(codAto, codNatureza, codEvento, viasAdicionais, viaPostal)
+		dim BD
+		dim codFC
+		dim codFCViaAd
+		dim codFCSedex
+		dim queries
+		dim i
+
+		dim custoNormal
+		dim custoViaAd
+		dim custoSedex
+
+		custoNormal = 0
+		custoViaAd = 0
+		custoSedex = 0
+
+		Set BD = new TBD
+		call BD.conecta
+
+		'Busca os códigos das faixas de custo
+		call BD.insereCampoQuery ("CO_ATO",codAto)
+		call BD.insereCampoQuery ("CO_NATUREZA_JURIDICA",codNatureza)
+		call BD.insereCampoQuery ("CO_EVENTO",codEvento)
+		call BD.insereCampoQuery ("DATA",fnFormataData(date,2))
+		call BD.abreQuery ("CUSTOSERVICO",1)
+																	queries = "[1] " & replace(BD.query,"	"," ") & " / "
+		codFC		= BD.valor ("CS_FAIXACUSTO")
+		codFCViaAd	= BD.valor ("CS_FC_ADICIONALVIA")
+		codFCSedex	= BD.valor ("CS_FC_ADICIONALSEDEX")
+		call BD.fechaQuery
+		call BD.limpaCamposQuery
+
+		'Busca pelo custo normal
+		call BD.insereCampoQuery ("CODFC",codFC)
+		call BD.abreQuery ("FAIXACUSTO",1)
+																	queries = queries & "[2] " & replace(BD.query,"	"," ") & " / "
+		custoNormal = BD.valor("FC_VALOR")
+		call BD.fechaQuery
+		call BD.limpaCamposQuery
+
+		'Busca pelo custo das vias adicionais
+		if cint(viasAdicionais) > 0 then
+			call BD.insereCampoQuery ("CODFC",codFCViaAd)
+			call BD.abreQuery ("FAIXACUSTO",1)
+																	queries = queries & "[3] " & replace(BD.query,"	"," ") & " / "
+			custoViaAd = csng(BD.valor("FC_VALOR")) * cint(viasAdicionais)
+			call BD.fechaQuery
+			call BD.limpaCamposQuery
+		end if
+
+		'Busca pelo custo de via postal
+		if abs(viaPostal) <> 0 then
+			call BD.insereCampoQuery ("CODFC",codFCSedex)
+			call BD.abreQuery ("FAIXACUSTO",1)
+																	queries = queries & "[4] " & replace(BD.query,"	"," ") & " / "
+			custoSedex = BD.valor("FC_VALOR")
+			call BD.fechaQuery
+			call BD.limpaCamposQuery
+		end if
+
+		call BD.desconecta
+
+		valorAto = csng(custoNormal) + csng(custoViaAd) + csng(custoSedex)
+
+		queries = queries & "Custo normal: " & formatCurrency(custoNormal) & " / "
+		queries = queries & "Custo via ad: " & formatCurrency(custoViaAd) & " / "
+		queries = queries & "Custo sedex: " & formatCurrency(custoSedex) & " / "
+		queries = queries & "VALOR TOTAL: " & formatCurrency(csng(custoNormal) + csng(custoViaAd) + csng(custoSedex))
+
+		call fnGravaLogValor(queries)
+
+	end function
+
+
+	'Retorna o código do custo de serviço baseado no Ato, Natureza e Evento
+	function fnCustoServico(codAto, codNatureza, codEvento)
+		dim BD
+		Set BD = new TBD
+		call BD.conecta
+
+		'Busca os códigos das faixas de custo
+		call BD.insereCampoQuery ("CO_ATO",codAto)
+		call BD.insereCampoQuery ("CO_NATUREZA_JURIDICA",codNatureza)
+		call BD.insereCampoQuery ("CO_EVENTO",codEvento)
+		call BD.insereCampoQuery ("DATA",fnFormataData(date,2))
+		call BD.abreQuery ("CUSTOSERVICO",1)
+
+		if not BD.eof then
+			fnCustoServico = BD.valor("CS_CustoServico")
+		else
+			fnCustoServico = ""
+		end if
+
+		call BD.desconecta
+
+	end function
+
+
+	'Obtém o próximo protocolo disponível, dado o ano
+	function fnProxProtocolo(ano)
+		dim objConn
+		dim objCommand
+		dim objParam
+
+		'Verifica o parâmetro ano: string(2)
+		ano = cstr(ano)
+		if len(ano) = 4 then
+			ano = right(ano,2)
+		elseif len(ano) <> 2 then
+			fnProxProtocolo = ""
+			exit function
+		end if
+
+		'Cria a conexão com o SQL Server (que controla os protocolos)
+		Set objConn = CreateObject("ADODB.Connection")
+		
+		'if Request.ServerVariables("LOCAL_ADDR") = "10.10.10.82" then
+		'	objConn.Open "Provider=SQLOLEDB.1;Password=123456;Persist Security Info=True;User ID=Protocolo;Initial Catalog=Protocolo;Data Source=10.10.10.17"
+
+		'else
+			objConn.Open "Provider=SQLOLEDB;Data Provider=SQLOLEDB.1;Persist Security Info=False;" & _
+						 "Data Source=JUCEPE-SRV02;Initial Catalog=DB_Jucepe;" & _
+						 "User ID=imagem;Password=imagem;"
+		'end if
+
+		'Cria o commando para executar a StoredProcedure
+		set objCommand = Server.CreateObject("ADODB.Command")
+		objCommand.ActiveConnection = objConn
+		objCommand.CommandText = "sp_protocolo"
+		objCommand.CommandType = adCmdStoredProc
+
+		'Anexa os parâmetros (de entrada e retorno)
+		Set objParam = objCommand.CreateParameter("p1",   adVarChar, adParamInput, 2, ano)
+		objCommand.Parameters.Append objParam
+		Set objParam = objCommand.CreateParameter("nRet", adVarChar, adParamOutput,9)
+		objCommand.Parameters.Append objParam
+
+		'Executa a SP e retorna o valor
+		objCommand.Execute
+		fnProxProtocolo = objCommand("nRet")
+
+		'Fecha a conexão e limpa as variáveis
+		objConn.close
+		set objParam = nothing
+		set objCommand = nothing
+		set objConn = nothing
+	end function
+
+
+	'Rotinas de exclusão de dados anteriores de um DAE
+	function excluiDAE
+
+		if session("DAE").exists("nrProtocolo") then
+			if len(session("DAE").item("nrProtocolo")) <> 9 then exit function
+		else
+			exit function
+		end if
+
+		call BD.limpaCamposQuery
+		call BD.insereCampoQuery("PROTOCOLO",session("DAE").item("nrProtocolo"))
+		call BD.abreQuery ("EXCLUIDAESERVICO",0)
+
+		call BD.limpaCamposQuery
+		call BD.insereCampoQuery("PROTOCOLO",session("DAE").item("nrProtocolo"))
+		call BD.abreQuery ("EXCLUISEDEX",0)
+	end function
+
+
+	'Obtém o próximo sequencial de um protocolo
+	function fnProximoSequencial
+
+		if session("DAE").exists("nrProtocolo") then
+			if len(session("DAE").item("nrProtocolo")) <> 9 then exit function
+		else
+			exit function
+		end if
+
+		call BD.conecta
+		call BD.limpaCamposQuery
+		call BD.insereCampoQuery("PROTOCOLO",session("DAE").item("nrProtocolo"))
+		call BD.abreQuery ("PROXSEQUENCIAL",1)
+		if not BD.eof then
+			fnProximoSequencial = right("000" & cint(BD.valor("Prox")) + 1,3)
+		else
+			fnProximoSequencial = "000"
+		end if
+		BD.fechaQuery
+	end function
+
+
+	'Rotinas de gravação do DAE, utilizando os dados do dicionário
+	'Tipo:	(I)nserção de novo DAE
+	'		(U)pdate de dados
+	function gravaDAE(tipo)
+
+		dim i, s
+		dim codEventos, quantEventos
+		dim erro
+		dim q1, q2, q3, q4
+		dim tipoIdentificacao
+		dim numSequencialDAE
+		dim temEventosDeTransf
+		dim codEventosTrans 
+		dim qtdEventosTrans 
+		dim nomeQuery
+		dim naturezaOrigem
+		dim naturezaDestino 
+		dim atoDestino
+		dim eventoDestino
+		dim precoDAEFilho
+		dim codBarrasFilho
+		dim nrProtocoloFilho
+		dim InfoCertEspecifica
+
+		erro = ""
+
+		call BD.conecta
+
+		'Detecta o tipo de documento
+		select case len (fnFormataSoNumeros(session("DAE").item("numDocGuia")))
+			case 11
+				tipoIdentificacao = 3 'CPF
+			case 14
+				tipoIdentificacao = 2 'CNPJ
+			case else
+				'Documento diferente! Por quê?
+				erro = "TipoDoc: Documento inválido - " & session("DAE").item("numDocGuia") 
+		end select
+		
+		'----------------------------------------------------------------------------------------------------------
+		'Manutenção A e B
+		'ojetivo: Quando tiver tipo de identificação invalido, retornar erro para nao gerar DAE sem estar na base.
+		'----------------------------------------------------------------------------------------------------------
+		'Verifica se o TipoIdentificacao veio inválido. 
+		if erro <> "" then
+			'se veio inválido e foi alteração, então devolve o estado do DAE para "A"
+			if tipo = "U" then
+		  		call BD.limpaCamposQuery
+		  		call BD.insereCampoQuery("PROTOCOLO",session("DAE").item("nrProtocolo"))
+		  		call BD.abreQuery ("DESCANCELAESEQUENCIAL",0)
+			end if
+		  
+			'Retorna erro para quem chamou esta função (include_pagina05.asp).
+			gravaDAE = erro
+			exit function
+		end if
+
+		'----------------------------------------------------------------------------------------------------------
+		'Manutenção Transformação
+		'ojetivo: Verifica se o DAE que está sendo gerado é um dae de Transformação
+		'----------------------------------------------------------------------------------------------------------
+		'Verifica se há eventos de transformação
+		codEventosTrans = split (session("DAE").item("codEventos"),",")
+		qtdEventosTrans = split (session("DAE").item("quantEventos"),",")
+		temEventosDeTransf = False
+		'for i = 0 to ubound (split(codEventos,",")) 
+		for i = 0 to ubound (codEventosTrans) 
+			if (codEventosTrans(i) = "046" ) then
+				temEventosDeTransf = True
+				exit for
+			end if 
+		next
+		
+		'Se for transformação, gera as variáveis de origem e destino
+		naturezaOrigem = session ("DAE").item("codNatureza")
+		if naturezaOrigem = "213-5" then
+		  naturezaDestino = "206-2"
+		  atoDestino = "090"
+		  eventoDestino = "046"
+		end if 
+		if naturezaOrigem = "206-2" then
+		  naturezaDestino = "213-5"
+		  atoDestino = "080"
+		  eventoDestino = "046"
+		end if
+
+
+		'Captura um novo número de protocolo para o DAE filho e coloca na sessão
+		nrProtocoloFilho = fnProxProtocolo(year(date))
+		if session("DAE").exists("nrProtocoloFilho") then call session("DAE").remove("nrProtocoloFilho")
+		call session("DAE").add("nrProtocoloFilho",nrProtocoloFilho)
+
+		'----------------------------------------------------------------------------------------------------------
+		'Manutenção Transformação - Gravação do pai na tabela DaeJucepe
+		'ojetivo: Grava na tabela DaeJucepe o protocolo pai se for o caso de uma transformação
+		'----------------------------------------------------------------------------------------------------------
+
+		'Se for uma certidão específica, grava os dados de informações sobre o pedido da certidao
+		InfoCertEspecifica = "[1ª]" & session("DAE").Item("CertEspecAto605_InformacaoDesejada1")
+		InfoCertEspecifica = InfoCertEspecifica & "[2ª]" & session("DAE").Item("CertEspecAto605_InformacaoDesejada2")
+		InfoCertEspecifica = InfoCertEspecifica & "[3ª]" & session("DAE").Item("CertEspecAto605_InformacaoDesejada3")
+
+		call BD.limpaCamposQuery
+		call BD.insereCampoQuery("PROTOCOLO",			session("DAE").item("nrProtocolo"))
+		call BD.insereCampoQuery("TIPOCAPA",			session("DAE").item("tipoCapa"))
+		call BD.insereCampoQuery("NUMEROVIAS",			cint(session("DAE").item("numViasPadrao")) + cint(session("DAE").item("numVias")))
+		call BD.insereCampoQuery("NR_NIRE",				session("DAE").item("nrNire"))
+		call BD.insereCampoQuery("NR_MATRICULA",		session("DAE").item("matrAgente"))
+
+		' Implementação para certidão emitida no balcão
+		If session("BALCAO").item("CertBalcaoAtendimento") = "S" Then			
+			call BD.insereCampoQuery("REQUERENTE",			replace(session("BALCAO").item("CertBalcaoAtendimentoNomeRequerente"),"`","'"))		
+			call BD.insereCampoQuery("NOMEDAE",				replace(session("BALCAO").item("CertBalcaoAtendimentoNomeRequerente"),"`","'"))
+			If (Len(Trim(fnFormataSoNumeros(session("BALCAO").item("CertBalcaoAtendimentoCPFCNPJRequerente")))) = 11) Then
+				call BD.insereCampoQuery("TIPOIDENTIFICACAO",	"3") 'CPF = 3
+			Else
+				call BD.insereCampoQuery("TIPOIDENTIFICACAO",	"2") 'CNPJ = 2
+			End If
+
+			call BD.insereCampoQuery("IDENTIFICACAO",		fnFormataSoNumeros(session("BALCAO").item("CertBalcaoAtendimentoCPFCNPJRequerente"))) 
+			call BD.insereCampoQuery("REPRESENTANTE",		replace(session("BALCAO").item("CertBalcaoAtendimentoNomeRequerente"),"`","'"))
+		Else
+			call BD.insereCampoQuery("REQUERENTE",			replace(session("DAE").item("nomeRepr"),"`","'"))
+			call BD.insereCampoQuery("NOMEDAE",				replace(session("DAE").item("denomGuia"),"`","'"))
+			call BD.insereCampoQuery("TIPOIDENTIFICACAO",	tipoIdentificacao)
+			call BD.insereCampoQuery("IDENTIFICACAO",		fnFormataSoNumeros(session("DAE").item("numDocGuia"))) 
+			call BD.insereCampoQuery("REPRESENTANTE",		replace(session("DAE").item("nomeRepr"),"`","'"))
+		End If
+
+		call BD.insereCampoQuery("RAZAOSOCIAL",			replace(session("DAE").item("denomGuia"),"`","'"))			
+		call BD.insereCampoQuery("TELEFONE",			session("DAE").item("foneRepr"))
+		call BD.insereCampoQuery("LOCAL",				session("DAE").item("local"))
+		call BD.insereCampoQuery("DATA",				session("DAE").item("data"))
+		call BD.insereCampoQuery("DATAARQUIVAMENTO",	session("DAE").item("dataArquivamento"))
+		call BD.insereCampoQuery("CERTIDAOESPECIFICA",	InfoCertEspecifica)
+		call BD.insereCampoQuery("NOMEMAE",				replace(session("DAE").item("nomeMae") & "","`","'"))
+		call BD.insereCampoQuery("ATENDENTE",			"WEBSITE2")
+		call BD.insereCampoQuery("DATAATENDIMENTO",		session("DAE").item("data"))
+		call BD.insereCampoQuery("STATUSTRANSFERENCIA",	session("DAE").item("statusTransferencia"))
+		call BD.insereCampoQuery("GRUPOSOLICITACAO",	session("DAE").item("codTipoEmp"))			'Verificar a query
+		call BD.insereCampoQuery("NOVONOME",			replace(session("DAE").item("novoNome"),"`","'"))	'Verificar a query
+
+		' Inclusão do Sequencial do Usuario Logado para a solicitação de serviços
+		' Flávio em 16/05/2011
+		call BD.insereCampoQuery("SQUSUARIOCG",			session("Login").item("SQ_USUARIOCG"))	
+
+		' Gravação da chave de autenticidade para toda solicitação de serviço
+		Dim ChaveAutenticidade
+		ChaveAutenticidade =  geraChave (session("DAE").item("nrProtocolo"), Replace(session("DAE").item("data"),"/",""))  
+
+		call session("DAE").add("AUTENTICIDADE",ChaveAutenticidade)	
+		call BD.insereCampoQuery("AUTENTICIDADE",ChaveAutenticidade)	
+
+		if (temEventosDeTransf) then
+			call BD.insereCampoQuery("TRANSFORMACAO",	"P")
+			session("DAE").item("transformacao") = "P"
+		else
+			call BD.insereCampoQuery("TRANSFORMACAO",	"N")	
+		end if 
+
+		if tipo = "I" then
+			'Insert
+			if erro = "" then 
+				call BD.abreQuery ("INSEREDAEJUCEPE",0)
+			else
+				'Só debug: serve para montar a query sem executar
+				call BD.abreQuery ("INSEREDAEJUCEPE",2)
+			end if
+			q1 = BD.query
+		elseif tipo = "U" then
+			'Update
+			if erro = "" then 
+				call BD.abreQuery ("ALTERADAEJUCEPE",0)
+			else
+				'Só debug: serve para montar a query sem executar
+				call BD.abreQuery ("ALTERADAEJUCEPE",2)
+			end if
+			q1 = BD.query
+			call excluiDAE	'Para update, apaga as próximas informações
+		end If
+		
+'		response.write BD.Query
+'		response.end
+
+
+		if BD.erro <> msgOk and erro = "" then 	erro = "Query 1: " & bd.erro
+
+		'----------------------------------------------------------------------------------------------------------
+		'Manutenção Transformação - Gravação do filho na tabela DaeJucepe
+		'ojetivo: Grava na tabela DaeJucepe o protocolo pai se for o caso de uma transformação
+		'----------------------------------------------------------------------------------------------------------
+		if (temEventosDeTransf) then
+			call BD.limpaCamposQuery
+			call BD.insereCampoQuery("PROTOCOLO",			session("DAE").item("nrProtocoloFilho"))
+			call BD.insereCampoQuery("TIPOCAPA",			session("DAE").item("tipoCapa"))
+			call BD.insereCampoQuery("NUMEROVIAS",			cint(session("DAE").item("numViasPadrao")) + cint(session("DAE").item("numVias")))
+			call BD.insereCampoQuery("NR_NIRE",				session("DAE").item("nrNire"))
+			call BD.insereCampoQuery("NR_MATRICULA",		session("DAE").item("matrAgente"))
+			call BD.insereCampoQuery("REQUERENTE",			replace(session("DAE").item("nomeRepr"),"`","'"))
+			call BD.insereCampoQuery("TIPOIDENTIFICACAO",	tipoIdentificacao) 'CPF = 3; CNPJ = 2
+			call BD.insereCampoQuery("IDENTIFICACAO",		fnFormataSoNumeros(session("DAE").item("numDocGuia"))) 
+			call BD.insereCampoQuery("NOMEDAE",				replace(session("DAE").item("denomGuia"),"`","'"))
+			call BD.insereCampoQuery("RAZAOSOCIAL",			replace(session("DAE").item("denomGuia"),"`","'"))
+			call BD.insereCampoQuery("REPRESENTANTE",		replace(session("DAE").item("nomeRepr"),"`","'"))
+			call BD.insereCampoQuery("TELEFONE",			session("DAE").item("foneRepr"))
+			call BD.insereCampoQuery("LOCAL",				session("DAE").item("local"))
+			call BD.insereCampoQuery("DATA",				session("DAE").item("data"))
+			call BD.insereCampoQuery("DATAARQUIVAMENTO",	session("DAE").item("dataArquivamento"))
+			call BD.insereCampoQuery("CERTIDAOESPECIFICA",	session("DAE").item("certEspecifica"))
+			call BD.insereCampoQuery("NOMEMAE",				replace(session("DAE").item("nomeMae") & "","`","'"))
+			call BD.insereCampoQuery("ATENDENTE",			"WEBSITE2")
+			call BD.insereCampoQuery("DATAATENDIMENTO",		session("DAE").item("data"))
+			call BD.insereCampoQuery("STATUSTRANSFERENCIA",	session("DAE").item("statusTransferencia"))
+			call BD.insereCampoQuery("GRUPOSOLICITACAO",	session("DAE").item("codTipoEmp"))			'Verificar a query
+			call BD.insereCampoQuery("NOVONOME",			replace(session("DAE").item("novoNome"),"`","'"))	'Verificar a query
+			call BD.insereCampoQuery("TRANSFORMACAO",	"F")	'Verificar a query
+			if tipo = "I" then
+				'Insert
+				if erro = "" then 
+					call BD.abreQuery ("INSEREDAEJUCEPE",0)
+				else
+					'Só debug: serve para montar a query sem executar
+					call BD.abreQuery ("INSEREDAEJUCEPE",2)
+				end if
+				q1 = BD.query
+			elseif tipo = "U" then
+				'Update
+				if erro = "" then 
+					call BD.abreQuery ("ALTERADAEJUCEPE",0)
+				else
+					'Só debug: serve para montar a query sem executar
+					call BD.abreQuery ("ALTERADAEJUCEPE",2)
+				end if
+				q1 = BD.query
+				call excluiDAE	'Para update, apaga as próximas informações
+			end if
+			if BD.erro <> msgOk and erro = "" then 	erro = "Query 2: " & bd.erro
+		end if
+
+		'----------------------------------------------------------------------------------------------------------
+		'Manutenção Transformação - Gravação do pai e filho na tabela DaeSequencial
+		'ojetivo: Grava na tabela DaeJucepe o protocolo pai se for o caso de uma transformação
+		'         somente para o caso de não ser restituição
+		'----------------------------------------------------------------------------------------------------------
+
+		'Grava o DaeSequencial do pai
+		if ( session("DAE").exists("valorRestituicao") and  session("DAE").item("valorRestituicao") <= 0  ) then
+			call BD.limpaCamposQuery
+			call BD.insereCampoQuery("DATAVENCIMENTO",	session("DAE").item("dataVencimento"))
+			call BD.insereCampoQuery("PROTOCOLO",		session("DAE").item("nrProtocolo"))
+			call BD.insereCampoQuery("SEQUENCIAL",		session("DAE").item("sequencialDae"))
+			call BD.insereCampoQuery("VALORDAE",		Replace(session("DAE").item("valorDae"),",","."))
+			call BD.insereCampoQuery("EMISSAOINTERNA",	session("DAE").item("solicitacaoInterna"))
+			call BD.insereCampoQuery("STATUSDAE",		"A")
+
+			if session("DAE").item("valorDae") > 0 then
+				call BD.insereCampoQuery("CODIGOBARRA",		session("DAE").item("codBarrasDae"))
+			else
+				call BD.insereCampoQuery("CODIGOBARRA",		"")
+			end if
+
+			'Se não houve erro anteriormente, grava, senão só monta a query
+			q2 = ""
+			if erro = "" then
+				if session("DAE").exists("sequencialDae") and session("DAE").item("sequencialDae") & "" <> "" then
+					'Executa normalmente a query
+					call BD.abreQuery ("INSEREDAESEQUENCIAL",0)
+					if BD.erro <> msgOk then erro = "Query 3: " & bd.erro & vbCrLf & BD.query
+				else
+					'Não há sequencial: não executa a query, mas registra
+					q2 = "[Não houve gravação em DAESEQUENCIAL] "
+					call BD.abreQuery ("INSEREDAESEQUENCIAL",2)
+				end if
+			else
+				'Só debug: serve para montar a query sem executar
+				call BD.abreQuery ("INSEREDAESEQUENCIAL",2)
+			end if
+			q2 = q2 & BD.query
+		end if
+
+		'Grava o DaeSequencial do filho
+		if (temEventosDeTransf) then
+			if ( session("DAE").exists("valorRestituicao") and  session("DAE").item("valorRestituicao") <= 0  ) then
+				'Calcula o preço do DAE Filho
+				precoDAEFilho = valorAto(atoDestino, naturezaOrigem, eventoDestino, session("DAE").item("numVias"), session("DAE").item("enviaViaPostal") = "S")
+				codBarrasFilho = codBarras (precoDAEFilho, session("DAE").item("nrProtocoloFilho"), session("DAE").item("sequencialDae"), session("DAE").item("dataVencimento"), 0)
+				call BD.limpaCamposQuery
+				call BD.insereCampoQuery("PROTOCOLO",		session("DAE").item("nrProtocoloFilho"))
+				call BD.insereCampoQuery("SEQUENCIAL",		"000")
+				call BD.insereCampoQuery("DATAVENCIMENTO",	session("DAE").item("dataVencimento"))
+				call BD.insereCampoQuery("VALORDAE",		Replace(precoDAEFilho,",","."))
+				call BD.insereCampoQuery("EMISSAOINTERNA",	session("DAE").item("solicitacaoInterna"))
+				call BD.insereCampoQuery("STATUSDAE",		"A")
+				if precoDAEFilho > 0 then
+					call BD.insereCampoQuery("CODIGOBARRA",		codBarrasFilho)
+				else
+					call BD.insereCampoQuery("CODIGOBARRA",		"")
+				end if
+
+				'Se não houve erro anteriormente, grava, senão só monta a query
+				q2 = ""
+				if erro = "" then
+					if session("DAE").exists("sequencialDae") and session("DAE").item("sequencialDae") & "" <> "" then
+						'Executa normalmente a query
+						call BD.abreQuery ("INSEREDAESEQUENCIAL",0)
+						if BD.erro <> msgOk then erro = "Query 4: " & bd.erro
+					else
+						'Não há sequencial: não executa a query, mas registra
+						q2 = "[Não houve gravação em DAESEQUENCIAL] "
+						call BD.abreQuery ("INSEREDAESEQUENCIAL",2)
+					end	if
+				else
+					'Só debug: serve para montar a query sem executar
+					call BD.abreQuery ("INSEREDAESEQUENCIAL",2)
+				end if
+				q2 = q2 & BD.query
+			end if
+		end if 
+
+
+		'----------------------------------------------------------------------------------------------------------
+		'Manutenção Transformação - Grava na tabela SEDEX o endereço para o DAE Pai
+		'ojetivo: Grava na tabela de sedex o endereço postal para envio (DAE PAI)
+		'----------------------------------------------------------------------------------------------------------
+		if session("DAE").item("enviaViaPostal") = "S" then
+			call BD.limpaCamposQuery
+			call BD.insereCampoQuery("PROTOCOLO",	session("DAE").item("nrProtocolo"))
+			call BD.insereCampoQuery("LOGRADOURO",	replace(session("DAE").item("endLogradouro"),"`","'"))
+			call BD.insereCampoQuery("NUMERO",		replace(session("DAE").item("endNum"),"`","'"))
+			call BD.insereCampoQuery("COMPLEMENTO",	replace(session("DAE").item("endCompl"),"`","'"))
+			call BD.insereCampoQuery("BAIRRO",		replace(session("DAE").item("endBairro"),"`","'"))
+			call BD.insereCampoQuery("CEP",			fnFormataSoNumeros(session("DAE").item("endCep")))
+			call BD.insereCampoQuery("MUNICIPIO",	replace(session("DAE").item("endCidade"),"`","'"))
+			call BD.insereCampoQuery("UF",			session("DAE").item("endUf"))
+			'Se não houve erro anteriormente, grava, senão só monta a query
+			if erro = "" then
+				call BD.abreQuery ("INSERESEDEX",0)
+				if BD.erro <> msgOk then erro = "Query 5: " & bd.erro
+			else
+				'Só debug: serve para montar a query sem executar
+				call BD.abreQuery ("INSERESEDEX",2)
+			end if
+			q3 = BD.query
+		end if
+
+		'----------------------------------------------------------------------------------------------------------
+		'Manutenção Transformação - Grava na tabela SEDEX o endereço para o DAE Filho
+		'ojetivo: Grava na tabela de sedex o endereço postal para envio (DAE FILHO)
+		'----------------------------------------------------------------------------------------------------------
+		if (temEventosDeTransf) then
+			if session("DAE").item("enviaViaPostal") = "S" then
+				call BD.limpaCamposQuery
+				call BD.insereCampoQuery("PROTOCOLO",	session("DAE").item("nrProtocoloFilho"))
+				call BD.insereCampoQuery("LOGRADOURO",	replace(session("DAE").item("endLogradouro"),"`","'"))
+				call BD.insereCampoQuery("NUMERO",		replace(session("DAE").item("endNum"),"`","'"))
+				call BD.insereCampoQuery("COMPLEMENTO",	replace(session("DAE").item("endCompl"),"`","'"))
+				call BD.insereCampoQuery("BAIRRO",		replace(session("DAE").item("endBairro"),"`","'"))
+				call BD.insereCampoQuery("CEP",			fnFormataSoNumeros(session("DAE").item("endCep")))
+				call BD.insereCampoQuery("MUNICIPIO",	replace(session("DAE").item("endCidade"),"`","'"))
+				call BD.insereCampoQuery("UF",			session("DAE").item("endUf"))
+
+				'Se não houve erro anteriormente, grava, senão só monta a query
+				if erro = "" then
+					call BD.abreQuery ("INSERESEDEX",0)
+					if BD.erro <> msgOk then erro = "Query 6: " & bd.erro
+				else
+					'Só debug: serve para montar a query sem executar
+					call BD.abreQuery ("INSERESEDEX",2)
+				end if
+				q3 = BD.query
+			end if
+		end if
+
+		'----------------------------------------------------------------------------------------------------------
+		'Manutenção Transformação - Grava na tabela DAESERVICO (vários registros)
+		'objetivo: Grava na tabela de DAE Servico os eventos para o DAE PAI
+		'----------------------------------------------------------------------------------------------------------
+		codEventos = split (session("DAE").item("codEventos"),",")
+		quantEventos = split (session("DAE").item("quantEventos"),",")
+		q4 = ""
+		for i = 0 to ubound (codEventos)
+			call BD.limpaCamposQuery
+			s = session("DAE").item("nrProtocolo")
+			call BD.insereCampoQuery("PROTOCOLO",s)
+			call BD.insereCampoQuery("CUSTOSERVICO", fnCustoServico(session("DAE").item("codAto"), _
+																	session("DAE").item("codNatureza"), _
+																	codEventos(i)))
+			call BD.insereCampoQuery("QUANTIDADE",cint(quantEventos(i)))
+			call BD.insereCampoQuery("VALOR", Replace(valorAto (session("DAE").item("codAto"), _
+														session("DAE").item("codNatureza"), _
+														codEventos(i), _
+														session("DAE").item("numVias"), _
+														session("DAE").item("enviaViaPostal") = "S"),",","."))
+			if erro = "" then
+				call BD.abreQuery ("INSEREDAESERVICO",0)
+				if BD.erro <> msgOk then erro = "Query 7/Loop " & cstr(i) & ": " & bd.erro
+			else
+				'Só debug: serve para montar a query sem executar
+				call BD.abreQuery ("INSEREDAESERVICO",2)
+			end If		
+			
+			q4 = q4 & "[" & cstr(i) & "] " & BD.query & vbCrLf
+		next
+
+		'----------------------------------------------------------------------------------------------------------
+		'Manutenção Transformação - Grava na tabela DAESERVICO (DAE FILHO)
+		'objetivo: Grava apenas o evento correspondente a transformação
+		'----------------------------------------------------------------------------------------------------------
+		if (temEventosDeTransf) then
+			call BD.limpaCamposQuery
+			call BD.insereCampoQuery("PROTOCOLO",session("DAE").item("nrProtocoloFilho"))
+			call BD.insereCampoQuery("CUSTOSERVICO", fnCustoServico(atoDestino, _
+																	NaturezaOrigem, _
+																	eventoDestino))
+			call BD.insereCampoQuery("QUANTIDADE",cint(1))
+			call BD.insereCampoQuery("VALOR", Replace(precoDAEFilho,",","."))
+			if erro = "" then
+				call BD.abreQuery ("INSEREDAESERVICO",0)
+				if BD.erro <> msgOk then erro = "Query 8 : " & bd.erro
+			else
+				'Só debug: serve para montar a query sem executar
+				call BD.abreQuery ("INSEREDAESERVICO",2)
+			end if
+
+			if erro = "" then
+				'Indica que todas as informações estão gravadas
+				if session("DAE").exists("jaGravado") then call session("DAE").remove("jaGravado")
+				call session("DAE").add("jaGravado","S")
+			Else
+				response.write (erro)
+			end if
+		end if
+
+		'----------------------------------------------------------------------------------------------------------
+		'Manutenção Transformação - Grava registro na tabela de transformação
+		'ojetivo: Gravar registro de relacionamento na tabela de transformação (nova)
+		'----------------------------------------------------------------------------------------------------------
+		if (temEventosDeTransf) then
+			call BD.limpaCamposQuery
+			call BD.insereCampoQuery("CO_TRANSF", cstr(fnObtemUltimoCodigo ("TRANSFORMACAO","CO_TRANSF") + 1))
+			call BD.insereCampoQuery("PROTOCOLO_PAI", session("DAE").item("nrProtocolo"))
+			call BD.insereCampoQuery("PROTOCOLO_FILHO",	session("DAE").item("nrProtocoloFilho"))
+			call BD.insereCampoQuery("CO_NATUREZA_ORIGEM",	session("DAE").item("codNatureza"))
+			call BD.insereCampoQuery("CO_NATUREZA_DESTINO",	naturezaDestino)
+
+			'Se não houve erro anteriormente, grava, senão só monta a query
+			if erro = "" then
+				call BD.abreQuery ("INSERETRANSFORMACAO",0)
+				if BD.erro <> msgOk then erro = "Query 9: " & bd.erro
+			else
+				'Só debug: serve para montar a query sem executar
+				call BD.abreQuery ("INSERETRANSFORMACAO",2)
+			end if
+			q3 = BD.query
+		end if
+
+		if erro <> "" then
+
+			'Exclui os dados gravados anteriormente, somente se for uma inserção (Rollback?!)
+			'E mais: Só exclui se não for o caso de uma constraint, ou seja, inserção repetida
+			if tipo = "I" and instr (lcase(erro),"unique constraint") + instr (lcase(erro),"violated") = 0  then
+				call BD.limpaCamposQuery
+				call BD.insereCampoQuery("PROTOCOLO",session("DAE").item("nrProtocolo"))
+				call BD.abreQuery ("EXCLUIDAESEQUENCIAL",1)
+
+				call BD.limpaCamposQuery
+				call BD.insereCampoQuery("PROTOCOLO",session("DAE").item("nrProtocolo"))
+				call BD.abreQuery ("EXCLUIDAESERVICO",1)
+
+				call BD.limpaCamposQuery
+				call BD.insereCampoQuery("PROTOCOLO",session("DAE").item("nrProtocolo"))
+				call BD.abreQuery ("EXCLUISEDEX",1)
+
+				call BD.limpaCamposQuery
+				call BD.insereCampoQuery("PROTOCOLO",session("DAE").item("nrProtocolo"))
+				call BD.abreQuery ("EXCLUIDAEJUCEPE",1)
+			end if
+		else
+			erro = msgOk
+		end if
+
+		if session ("DAE").exists("q1") then call session ("DAE").remove("q1")
+		if session ("DAE").exists("q2") then call session ("DAE").remove("q2")
+		if session ("DAE").exists("q3") then call session ("DAE").remove("q3")
+		if session ("DAE").exists("q4") then call session ("DAE").remove("q4")
+		call session ("DAE").add("q1",replace(q1,"	"," "))
+		call session ("DAE").add("q2",replace(q2,"	"," "))
+		call session ("DAE").add("q3",replace(q3,"	"," "))
+		call session ("DAE").add("q4",replace(q4,"	"," "))
+
+		gravaDAE = erro
+
+	end function
+
+	function gravaDAEComplementar (sequencial)
+		'Grava na tabela DAESEQUENCIAL
+		call BD.conecta
+		call BD.limpaCamposQuery
+		call BD.insereCampoQuery("PROTOCOLO",		session("DAE").item("nrProtocolo"))
+		call BD.insereCampoQuery("SEQUENCIAL",		sequencial)
+		call BD.insereCampoQuery("CODIGOBARRA",		session("DAE").item("codBarrasDae"))
+		call BD.insereCampoQuery("VALORDAE",		replace(session("DAE").item("valorDae"),",","."))
+		call BD.insereCampoQuery("DATAVENCIMENTO",	session("DAE").item("dataVencimento"))
+		call BD.insereCampoQuery("EMISSAOINTERNA",	session ("DAE").item("solicitacaoInterna"))
+		call BD.insereCampoQuery("STATUSDAE",		"A")
+
+		call BD.abreQuery ("INSEREDAESEQUENCIAL",0)
+		gravaDAEComplementar = BD.erro
+
+	end function
+
+
+	'Carrega as informações do DAE armazenados no banco
+	'no dicionário de dados (DAE)
+	function carregaDAE (protocolo, carregaTaxas)
+
+		dim i,s
+		dim numViasPadrao, numVias
+		dim codEventos, quantEventos, tipoEventos
+		dim seqs
+		dim codEventosDescricao
+
+		numVias = 0 
+		numViasPadrao = 0
+		codEventos = ""
+		quantEventos = ""
+		tipoEventos = ""
+
+		carregaDAE = false
+		call session ("DAE").removeAll
+
+		'Informações contidas em DAEJUCEPE
+		call bd.limpaCamposQuery
+		call bd.insereCampoQuery ("PROTOCOLO",protocolo)
+		call bd.abreQuery ("CARREGADAEJUCEPE",1)
+
+		if bd.erro <> msgOk or bd.eof then
+			call session ("DAE").removeAll
+			response.write (bd.erro)
+			exit function
+		end if
+
+		numVias = bd.valor("NumeroVias")
+		call session("DAE").add("tipoCapa",bd.valor("TipoCapa"))
+		call session("DAE").add("tipocertidaoespecifica",bd.valor("tipocertidao"))
+		call session("DAE").add("nrNire",bd.valor("NR_NIRE"))
+		call session("DAE").add("matrAgente",bd.valor("NR_MATRICULA"))
+		call session("DAE").add("nomeRepr",bd.valor("Representante"))'Requerente
+		call session("DAE").add("tipoDocGuia",split("CNPJ,CPF",",")(cint(bd.valor("TipoIdentificacao"))-2)) 'CPF = 3; CNPJ = 2
+		if session("DAE").item("tipoDocGuia") = "CPF" then
+			call session("DAE").add("numDocGuia",fnFormataCPF(bd.valor("Identificacao")))
+		else
+			call session("DAE").add("numDocGuia",fnFormataCNPJ(bd.valor("Identificacao")))
+		end if
+		call session("DAE").add("denomGuia",bd.valor("NomeDAE"))
+		call session("DAE").add("foneRepr",bd.valor("Telefone"))
+		call session("DAE").add("local",bd.valor("Local"))
+		call session("DAE").add("data",bd.valor("Data"))
+		call session("DAE").add("dataArquivamento",bd.valor("DataArquivamento"))
+		call session("DAE").add("certEspecifica",bd.valor("CertidaoEspecifica"))
+		call session("DAE").add("CertEspecCPF",bd.valor("CPFCERTIDAO"))
+		call session("DAE").add("certEspecCNPJ",bd.valor("CNPJCERTIDAO"))
+		call session("DAE").add("certEspecNIRE",bd.valor("NIRECERTIDAO"))
+		call session("DAE").add("nomeMae",bd.valor("NomeMae"))
+		call session("DAE").add("dataAtendimento",bd.valor("DataAtendimento"))			'Falta documentar e tratar esta entrada no dicionário
+		call session("DAE").add("statusTransferencia",bd.valor("StatusTransferencia"))	'Falta documentar e tratar esta entrada no dicionário
+		call session("DAE").add("codTipoEmp",bd.valor("GRUPOSOLICITACAO"))				'Verificar a query
+		call session("DAE").add("novoNome",bd.valor("NOVONOME"))						'Verificar a query
+		call session("DAE").add("nomeEmpresa",bd.valor("razaoSocial"))
+		call session("DAE").add("transformacao",bd.valor("transformacao"))
+		Call session("DAE").add("chaveautenticacao",bd.valor("autenticidade"))
+
+		call bd.fechaQuery
+
+		'Informações contidas em DAESEQUENCIAL
+		call bd.limpaCamposQuery
+		call bd.insereCampoQuery ("PROTOCOLO",protocolo)
+		call bd.abreQuery ("CARREGADAESEQUENCIAL",1)
+
+		if bd.erro <> msgOk or bd.eof then
+			call session ("DAE").removeAll
+			response.write (bd.erro)
+			exit function
+		end if
+		
+		i = 0
+		seqs = ""
+		do until bd.eof
+
+			s = bd.valor ("sequencial")
+			seqs = seqs & s & " "
+			if s = "000" or i = 0 then s= ""
+
+			'Atente-se para o fato de a primeira taxa NÃO CANCELADA ser sempre a principal
+			if carregaTaxas or i = 0 then
+
+				call session("DAE").add(s & "sequencialDae",		bd.valor("sequencial"))
+				call session("DAE").add(s & "codBarrasDae",			bd.valor("CodigoBarra"))
+				call session("DAE").add(s & "valorDae",				bd.valor("ValorDAE"))
+				call session("DAE").add(s & "dataVencimento",		bd.valor("DataVencimento"))	'Verificar formatação
+				call session("DAE").add(s & "dataPagamento",		bd.valor("DataPagamento"))	'Não pertinente
+				call session("DAE").add(s & "solicitacaoInterna",	bd.valor("EmitidoJUCEPE"))
+				call session("DAE").add(s & "protAssociado",		bd.valor("ProtAssociado"))	'Não pertinente
+				call session("DAE").add(s & "statusDae",			bd.valor("StatusDAE"))
+				call session("DAE").add(s & "linhaDigitavelDae",	codBarras (session("DAE").item(s & "valorDae"), protocolo, session("DAE").item(s & "sequencialDae"), session("DAE").item(s & "dataVencimento"), 1))
+
+				i = i + 1
+			end if
+
+			bd.prox
+		loop
+		call session("DAE").add("sequenciais",trim(seqs))
+		call bd.fechaQuery
+
+		'Informações contidas em SEDEX
+		call bd.limpaCamposQuery
+		call bd.insereCampoQuery ("PROTOCOLO",protocolo)
+		call bd.abreQuery ("CARREGASEDEX",1)
+
+		if bd.erro <> msgOk then
+			call session ("DAE").removeAll
+			response.write (bd.erro)
+			exit function
+		end if
+
+		if bd.EOF then
+			call session("DAE").add("enviaViaPostal","N")
+		else
+			call session("DAE").add("enviaViaPostal","S")
+			call session("DAE").add("endLogradouro",bd.valor("Logradouro"))
+			call session("DAE").add("endNum",bd.valor("Numero"))
+			call session("DAE").add("endCompl",bd.valor("Complemento"))
+			call session("DAE").add("endBairro",bd.valor("Bairro"))
+			call session("DAE").add("endCep",bd.valor("Cep"))
+			call session("DAE").add("endCidade",bd.valor("Municipio"))
+			call session("DAE").add("endUf",bd.valor("UF"))
+			estUs = bd.valor("UF")
+		end if
+		call bd.fechaQuery
+
+		'Informações adicionais e de eventos
+		call bd.limpaCamposQuery
+		call bd.insereCampoQuery ("PROTOCOLO",protocolo)
+		call bd.abrequery ("CARREGADETALHESDAE",1)
+
+		if bd.erro <> msgOk or bd.eof then
+			call session ("DAE").removeAll
+			response.write (bd.eof)
+			exit function
+		end if
+
+		'Primeiro, uma vez as informações que se repetem...
+		call session ("DAE").add("codAto",bd.valor("CO_ATO"))
+
+		call session ("DAE").add("codNatureza",bd.valor("CO_NATUREZA_JURIDICA"))
+	    call session ("DAE").add("descAto",bd.valor("NO_ATO"))
+		call session ("DAE").add("descNatureza",bd.valor("NO_NATUREZA_JURIDICA"))
+		call session ("DAE").add("abreEmpresa",bd.valor("ABREEMPRESA"))
+		call session ("DAE").add("obrigaTrocarNome",bd.valor("OBRIGATROCARNOME"))
+		call session ("DAE").add("permiteTrocarNome",bd.valor("PERMITETROCARNOME"))
+		call session ("DAE").add("solicitaNomeMae",bd.valor("SOLICITANOMEMAE"))
+		call session ("DAE").add("certIntTeor",bd.valor("CERTIDAOINTEIROTEOR"))
+		call session ("DAE").add("requerAgente",bd.valor("REQUERAGENTE"))
+
+		codEventosDescricao = ""
+
+		'...depois, as informações sobre cada evento
+		do until bd.eof
+			if codEventos <> "" Then
+				codEventosDescricao = codEventosDescricao & ";"
+				codEventos = codEventos & ","
+				quantEventos = quantEventos & ","
+				tipoEventos = tipoEventos & ","
+			end if
+			codEventos = codEventos & bd.valor("CO_EVENTO")
+			codEventosDescricao = codEventosDescricao & bd.valor("CO_EVENTO") & " - " & bd.valor("NO_EVENTO")
+			quantEventos = quantEventos & bd.valor ("QUANTIDADE")
+			if bd.valor ("IN_EVENTO_PADRAO") = "S" then tipoEventos = tipoEventos & "P" else tipoEventos = tipoEventos & "N"
+			if not isnull (bd.valor("NUMEROVIAS")) then
+				if cint(bd.valor("NUMEROVIAS")) > numViasPadrao then numViasPadrao = cint(bd.valor("NUMEROVIAS"))
+			else
+				numViasPadrao = 0
+			end if
+			bd.prox
+		loop
+
+		bd.fechaQuery
+
+		'Informações de solicitação de restituição
+		call bd.limpaCamposQuery
+		call bd.insereCampoQuery ("PROTOCOLO",protocolo)
+		call bd.abreQuery("CARREGARESTITUICAODAE",1)
+
+		s = "restCodigoRestituicao,restDataPagamento,restValorPagamento,restValorUtilizado," & _
+			"restValorRestituido,restNomeRequerente,restRgRequerente,restOeRequerente," & _
+			"restUfRequerente,restCpfRequerente,restValorRestituido,restCnpjEmpresa"
+		for i = 0 to ubound(split(s,","))
+			if session ("DAE").exists(split(s,",")(i)) then call session ("DAE").remove(split(s,",")(i))
+		next
+
+		if not bd.eof then
+			call session("DAE").add("restCodigoRestituicao",	bd.valor("CO_RESTITUICAO"))
+			call session("DAE").add("restDataPagamento",		bd.valor("DT_PAGAMENTO"))
+			call session("DAE").add("restValorPagamento",		bd.valor("VLR_RECEBIDO"))
+			call session("DAE").add("restValorUtilizado",		CDbl(bd.valor("VLR_RECEBIDO")) - CDbl(bd.valor("VLR_RESTITUICAO")))'session("DAE").item("valorDae"))
+			call session("DAE").add("restNomeRequerente",		bd.valor("NO_REQUERENTE"))
+			call session("DAE").add("restRgRequerente",			bd.valor("RG_REQUERENTE"))
+			call session("DAE").add("restOeRequerente",			bd.valor("ORGAOEMISSOR_REQUERENTE"))
+			call session("DAE").add("restUfRequerente",			bd.valor("UF"))
+			call session("DAE").add("restCpfRequerente",		bd.valor("CPF_REQUERENTE"))
+			call session("DAE").add("restValorRestituido",		CDbl(bd.valor("VLR_RESTITUICAO")))'csng(bd.valor("VLR_RECEBIDO"))-csng(bd.valor("VLR_RESTITUICAO")))
+			call session("DAE").add("restRestituido",			bd.valor("RESTITUIDO"))
+			call session("DAE").add("restCnpjEmpresa",			bd.valor("CNPJ"))
+		end if
+		call bd.fechaQuery
+
+		'Tratamento especial para os registros gravados ANTES da alteração da base (sem tipo de empresa)
+		if session("DAE").item("codTipoEmp") & "" = "" then
+			call session("DAE").remove("codTipoEmp")
+			select case cstr(session("DAE").item("codNatureza"))
+				case "213-5"
+					call session ("DAE").add("codTipoEmp","1")
+				case "201-1"
+					call session ("DAE").add("codTipoEmp","2")
+				case "204-6"
+					call session ("DAE").add("codTipoEmp","3")
+				case "206-2"
+					call session ("DAE").add("codTipoEmp","4")
+				case "214-3"
+					call session ("DAE").add("codTipoEmp","5")
+				case else
+					call session ("DAE").add("codTipoEmp","")
+			end select
+		end if
+
+		'Obtém, se possível, o nome do grupo (tipo de empresa)
+		call BD.limpaCamposQuery
+		call BD.insereCampoQuery("GRUPOSOLICITACAO",session("DAE").item("codTipoEmp"))
+		call BD.abreQuery ("TIPOEMPRESA",1)
+		if not BD.eof then
+			call session ("DAE").add ("descTipoEmp",  BD.valor("GS_DESCRICAO"))
+		else
+			call session ("DAE").add ("descTipoEmp","")
+		end if
+		call BD.fechaQuery
+
+		'Ajuste e gravação dos números de via (padrão e adicionais)
+		numVias = cint(numViasPadrao) - cint(numVias) 'Variável armazena o número de vias adicionais
+		call session ("DAE").add("numVias",numVias)
+		call session ("DAE").add("numViasPadrao",numViasPadrao)
+
+		'Grava no dicionário os dados sobre os eventos
+		call session ("DAE").add("codEventos",codEventos)
+		call session ("DAE").add("codEventosDescricao",codEventosDescricao)		
+		call session ("DAE").add("quantEventos",quantEventos)
+		call session ("DAE").add("tipoEventos",tipoEventos)
+
+		'Informa, no dicionário, que se trata de uma carga de DAE
+		call session("DAE").add("daeExistente","S")
+
+		'============================================================================================================
+		' Inseri a situação do pagamento
+		' Flávio - para facilitar nas solicitações e saber se ja foi pago ou não
+		'============================================================================================================
+		call session("DAE").add("pago",fnVerificaSituacaoProcesso(protocolo,CDbl(session("DAE").item("valorDae"))))
+		call session("DAE").add("valorpagoarrecadacao",fnResgataValorPagoNaArrecadacao(protocolo))		
+
+		'============================================================================================================
+		' Flávio em 27/05/2011
+		' Caso o ato seja de certidão inteiro teor recupera o arquivamento solicitado e a data que foi arquivado
+		'============================================================================================================
+		call bd.limpaCamposQuery
+		call bd.insereCampoQuery ("PROTOCOLO",protocolo)
+		call bd.abreQuery("CARREGAARQUIVAMENTOSOLICITADO",1)
+		if not bd.eof Then
+			call session("DAE").add("ProtocoloArquivadoSolicitado",BD.valor("PROTOCOLOATOARQUIVADO"))		
+			call session("DAE").add("DataProtocoloArquivadoSolicitado",BD.valor("DT_ARQUIV_DESARQUIV"))
+			call session("DAE").add("AtoArquivadoSolicitado",BD.valor("CO_ATO") & "-" & BD.valor("NO_ATO") )
+			call session("DAE").add("NireArquivamentoSolicitado",BD.valor("NIRE"))
+			call session("DAE").add("NomeEmpresaArquivamentoSolicitado",BD.valor("NO_PESSOA"))
+		Else
+			call session("DAE").add("ProtocoloArquivadoSolicitado",protocolo)				
+		End If
+		Call bd.fechaQuery
+		
+		'Finalmente, grava o protocolo no dicionário
+		call session("DAE").add("nrProtocolo", protocolo)
+
+		carregaDAE = true
+
+'		dim ke,it
+'		s = session("DAE").items
+'		ke = session("DAE").keys
+'		it = session("DAE").items
+'		response.write ("<div style='text-align:left'>")
+'		for i = 0 to ubound(s)
+'			response.write (ke(i) & " - " & it(i) & "<br>")
+'		next
+'		response.write ("</div>")
+
+	end function
+
+
+
+	function cancelaDAE
+
+		if session("DAE").exists("nrProtocolo") then
+			if len(session("DAE").item("nrProtocolo")) <> 9 then exit function
+		else
+			exit function
+		end if
+
+		call BD.conecta
+
+		call BD.insereCampoQuery ("PROTOCOLO",session("DAE").item("nrProtocolo"))
+		call BD.abreQuery ("CANCELADAESEQUENCIAL",0)
+		call BD.limpaCamposQuery
+
+	end function
+
+
+
+	function fnCarregaValorPago (byref valorPago, byref dataUltPagto)
+		dim valorTotal, i
+
+		valorTotal = 0
+		dataUltPagto = 0
+		i = 0
+
+		if session("DAE").exists("nrProtocolo") then
+			if len(session("DAE").item("nrProtocolo")) <> 9 then exit function
+		else
+			exit function
+		end if
+
+		call BD.conecta
+
+		call bd.insereCampoQuery ("PROTOCOLO",session("DAE").item("nrProtocolo"))
+		call bd.abreQuery ("VALORPAGO",1)
+		redim valorPago(BD.numRegs,2)
+
+		do until bd.eof
+			valorTotal = valorTotal + csng(bd.valor("VALORDAE"))
+			valorPago(i,0) = bd.valor("SEQUENCIAL")
+			valorPago(i,1) = bd.valor("VALORDAE")
+			if bd.valor("DATAPAGAMENTO") > dataUltPagto then dataUltPagto = bd.valor("DATAPAGAMENTO")
+			bd.prox
+		loop
+		bd.fechaQuery
+
+		call bd.desconecta
+
+		fnCarregaValorPago = valorTotal
+
+	end function
+
+
+	'Função para refazer a entrada 'sequenciais' do dicionário
+	function recarregaSequenciais
+		dim i, s
+		dim seqs
+
+		if session ("DAE").exists("sequenciais") then call session ("DAE").remove("sequenciais")
+
+		call bd.conecta
+		call bd.insereCampoQuery("PROTOCOLO",		session("DAE").item("nrProtocolo"))
+		call bd.abreQuery ("CARREGADAESEQUENCIAL",1)
+
+		if bd.erro <> msgOk or bd.eof then
+			'call session ("DAE").removeAll
+			'response.write (bd.erro)
+			exit function
+		end if
+
+		i = 0
+		seqs = ""
+		do until bd.eof
+			s = bd.valor ("sequencial")
+			seqs = seqs & s & " "
+			bd.prox
+		loop
+
+		if session ("DAE").exists("sequenciais") then call session ("DAE").remove("sequenciais")
+		call session("DAE").add("sequenciais",trim(seqs))
+		call bd.desconecta
+	end function
+
+
+	'Funções auxiliares de controle do (pseudo) bloqueio das tabelas
+	function tabelaLocada(tabela)
+		call BD.conecta
+		call BD.insereCampoQuery ("TABELA",tabela)
+		call BD.abreQuery ("TABELALOCADA",1)
+		tabelaLocada = not BD.eof
+		call BD.desconecta
+	end function
+
+	function locaTabela(tabela)
+		call BD.conecta
+		call BD.insereCampoQuery ("TABELA",tabela)
+		call BD.abreQuery ("LOCATABELA",0)
+		locaTabela = (BD.Erro = msgOk)
+		call BD.desconecta
+	end function
+
+	function liberaTabela(tabela)
+		call BD.conecta
+		call BD.insereCampoQuery ("TABELA",tabela)
+		call BD.abreQuery ("LIBERATABELA",0)
+		liberaTabela = (BD.Erro = msgOk)
+		call BD.desconecta
+	end function
+
+
+
+	function gravaSolicitacaoRestituicao
+
+		dim co_restituicao, co_arrecadacao_dae
+		dim numero_ultimo_sequencial
+		dim numero_carta_credito
+		dim dt_pagamento_dae
+
+		while tabelaLocada("arr_restituicao")
+			'Aguarda liberação da tabela
+			'DOLATER: trabalhar timeout
+		wend
+
+		'Obtém o código do DAE (se houver)
+		call BD.conecta
+		call BD.insereCampoQuery("PROTOCOLO",session("DAE").item("nrProtocolo"))
+		call BD.abreQuery ("CODARRECADACAODAE",1)
+
+		if BD.eof then
+			call BD.desconecta
+			gravaSolicitacaoRestituicao = false
+			exit function
+		else
+			co_arrecadacao_dae = BD.valor("CO_ARRECADACAO_DAE")
+			dt_pagamento_dae   = BD.valor("DT_ARRECADACAO")
+		end if
+
+'		'Bloqueia tabela
+'		if not locaTabela ("arr_restituicao") then 
+'			gravaSolicitacaoRestituicao = false
+'			exit function
+'		end if
+
+		'Obtém o código de restituição
+		call BD.conecta
+		call BD.abreQuery ("PROXCODRESTITUICAO",1)
+		if BD.eof then co_restituicao = 1 else co_restituicao = cint (BD.valor("PROX")) + 1
+		call BD.desconecta
+
+		'Insere os dados na tabela
+		call BD.conecta
+		call BD.insereCampoQuery("CO_RESTITUICAO",				co_restituicao)
+'		call BD.insereCampoQuery("DT_PAGAMENTO",				session("DAE").item("restDataPagamento"))
+		call BD.insereCampoQuery("DT_PAGAMENTO",				dt_pagamento_dae)
+		call BD.insereCampoQuery("DT_EMISSAO",					fnFormataData(date,2))
+		call BD.insereCampoQuery("RESTITUIDO",					"N")
+		call BD.insereCampoQuery("VLR_RECEBIDO",				session("DAE").item("restValorPagamento"))
+		call BD.insereCampoQuery("VLR_COBRADO",					Session("DAE").item("valorDae"))
+		call BD.insereCampoQuery("VLR_RESTITUICAO",				session("DAE").item("restValorRestituido"))
+		call BD.insereCampoQuery("CO_TIPO_RESTITUICAO",			2)		'Parametrizar?!
+		call BD.insereCampoQuery("CO_USUARIO_RESP",				"31")	'Parametrizar?!
+		call BD.insereCampoQuery("CO_ARRECADACAO_DAE",			co_arrecadacao_dae)
+		call BD.insereCampoQuery("NO_REQUERENTE",				replace(session("DAE").item("restNomeRequerente"),"`","'"))
+		call BD.insereCampoQuery("RG_REQUERENTE",				session("DAE").item("restRgRequerente"))
+		call BD.insereCampoQuery("ORGAOEMISSOR_REQUERENTE",		session("DAE").item("restOeRequerente"))
+		call BD.insereCampoQuery("UF",							session("DAE").item("restUfRequerente"))
+		call BD.insereCampoQuery("CPF_REQUERENTE",				session("DAE").item("restCpfRequerente"))
+		call BD.insereCampoQuery("FONE_REQUERENTE",				session("DAE").item("foneRepr"))
+		call BD.insereCampoQuery("NO_EMPRESA",					replace(session("DAE").item("nomeEmpresa"),"`","'"))
+		call BD.insereCampoQuery("NR_NIRE",						session("DAE").item("nrNire"))
+		call BD.insereCampoQuery("CNPJ",						session("DAE").item("restCnpjEmpresa"))
+		call BD.insereCampoQuery("STATUS",						"P")
+
+		
+        '------------------------------------------------------------------------------------------
+        'Manutenção C
+		'ojetivo: passar o campo de número de carta de crédito para ser gravado também.
+        '------------------------------------------------------------------------------------------
+		if session("DAE").item("sequenciais") = "000" or  session("DAE").item("sequenciais") = -1  then
+			numero_ultimo_Sequencial = "000"	
+		else
+			numero_ultimo_sequencial = (session("DAE").item("sequenciais"))
+		end if	
+		
+		'Se houver mais de um sequencial, pega o último
+		If InStr (numero_ultimo_sequencial," ") > 0 Then
+			numero_ultimo_sequencial = Mid (numero_ultimo_sequencial,InstrRev(numero_ultimo_sequencial," ")+1, 3)
+		End If
+
+		numero_carta_credito = session("DAE").item("nrProtocolo") & numero_ultimo_sequencial
+
+		call BD.insereCampoQuery("NR_CARTADECREDITO",numero_carta_credito )
+		call BD.abreQuery("GRAVARESTITUICAO",0)
+
+		gravaSolicitacaoRestituicao = (BD.erro = msgOk)
+
+		if session ("DAE").exists("restCodigoRestituicao") then call session ("DAE").remove("restCodigoRestituicao")
+		if BD.erro = msgOk then
+			call session("DAE").add("restCodigoRestituicao",co_restituicao)
+		end if
+
+		'Desbloqueia a tabela
+		call liberaTabela ("arr_restituicao")
+		
+		
+	end function
+
+
+	function solicitacaoInterna
+
+		Dim BD
+		Set BD = new TBD
+
+		'Detecta se o documento está sendo gerada na JUCEPE
+		call BD.conecta
+		'Se foi um forward, a indicação é aqui
+		if Trim(request.servervariables("HTTP_X_FORWARDED_FOR")) & "" <> "" then
+			call BD.insereCampoQuery ("IP",request.servervariables("HTTP_X_FORWARDED_FOR"))
+		else
+			call BD.insereCampoQuery ("IP",request.servervariables("REMOTE_ADDR"))
+		end If
+
+		call BD.abreQuery ("IPJUCEPE",1)
+
+		solicitacaoInterna = not BD.EOF
+
+		call BD.desconecta
+		set BD = nothing
+
+	end function
+
+
+
+	function fnObtemUltimoCodigo (tabela,campo)
+		Dim BDAux
+		Set BDAux = new TBD
+
+		call bdAux.conecta
+		call bdAux.insereCampoQuery ("TABELA",tabela)
+		call bdAux.insereCampoQuery ("CAMPO",campo)
+		call bdAux.abreQuery ("ULTIMO_CODIGO",1)
+		if (bdAux.erro <> msgOk or isnull(bdAux.valor("MX"))) then 
+			fnObtemUltimoCodigo = 0 
+		else 
+			fnObtemUltimoCodigo = cint(bdAux.valor("MX"))
+		end if
+
+		call bdAux.fechaQuery
+	end function
+
+
+
+
+	function fnGravaLogErro(erro)
+		dim f, s, s1
+		dim nomeArq
+
+		s = "LOG GERADO PELO DAE 2.0" & vbCrLf & _
+			"===============================================================================" & vbCrLf & vbCrLf & _
+
+			"Data: " & fnFormataData (date,2) & vbCrLf & _
+			"Hora: " & fnFormataHora (time,1) & vbCrLf & _
+			"IP: " &  request.servervariables("REMOTE_ADDR") & vbCrLf & _
+			"Browser: " & request.servervariables("HTTP_USER_AGENT") & vbCrLf & vbCrLf & _
+
+			"DESCRIÇÃO DO ERRO" & vbCrLf & _
+			"-------------------------------------------------------------------------------" & vbCrLf & vbCrLf & _
+
+			erro & vbCrLf & vbCrLf & _
+
+			"-------------------------------------------------------------------------------" & vbCrLf & vbCrLf & vbCrLf & _
+
+			"QUERIES EXECUTADAS" & vbCrLf & _
+			"-------------------------------------------------------------------------------" & vbCrLf & vbCrLf
+
+			if session("DAE").item("q1") & "" <> "" then s = s & session("DAE").item("q1") & vbCrLf & vbCrLf
+			if session("DAE").item("q2") & "" <> "" then s = s & session("DAE").item("q2") & vbCrLf & vbCrLf
+			if session("DAE").item("q3") & "" <> "" then s = s & session("DAE").item("q3") & vbCrLf & vbCrLf
+			if session("DAE").item("q4") & "" <> "" then s = s & session("DAE").item("q4") & vbCrLf & vbCrLf
+
+
+		s = s & vbCrLf & _
+			"RELAÇÃO DE DADOS DO DICIONÁRIO" & vbCrLf & _
+			"-------------------------------------------------------------------------------" & vbCrLf & vbCrLf
+
+'		call SortDictionary(session("DAE"), 1)
+		for each i in session("DAE")
+			if i <> "q1" and i <> "q2" and i <> "q3" and i <> "q4" then
+				s1 = left(i & "                           ",25)
+				if not isnull(session("DAE").item(i)) then
+					s1 = s1 & replace (session("DAE").item(i),vbCrLf," | ")
+				end if
+				s = s & s1 & vbCrLf
+			end if
+		next
+
+		nomeArq = "LOG_" & session("DAE").item("nrProtocolo") & "_" & fnFormataHora(time,6) & "#.log"
+		if instr (session("DAE").item("q1"),"UPDATE") > 0 then
+			nomeArq = replace(nomeArq,"#","U")
+		else
+			nomeArq = replace(nomeArq,"#","I")
+		end if
+
+		'Em 18/11/2010, alterei a localização do LOG do DAE de seu local original para D:\LogDAE
+		'Em 03/02/2011, parametrizei o caminho do LOG em variável de sessão no arquivo global.asa
+
+		if not fso.folderExists(Session ("stCamLog") & fnFormataData(date,12)) then fso.createFolder(Session ("stCamLog") & fnFormataData(date,12))
+		set f = fso.openTextFile (Session ("stCamLog") & fnFormataData(date,12) & "\" & nomeArq,2,true)
+		f.write(s)
+		f.close
+	end function
+
+
+	function fnGravaLogValor(q)
+		if session("DAE").exists("logValor") then call session("DAE").remove("logValor")
+		call session ("DAE").add("logValor",q)
+	end Function
+
+
+	function gravaLog (secao, texto)
+		dim f, ip
+			ip = right("               " & request.serverVariables("REMOTE_ADDR"),15)
+			if not fso.folderExists(session("stCamDados") & "logs\") then fso.createFolder(session("stCamDados") & "logs\")
+			set f = FSO.openTextFile(session("stCamDados") & "logs\" & fnFormataData(date,12) & ".log", 8, true)
+			f.WriteLine(fnFormataData (date,14) & " " & fnFormataHora(time,1) & " " & ip & " (" & secao & ") - " & texto)
+			f.close
+	end function
+
+
+	'Em 19/11/2010, foi incluída uma função genérica para filtrar eventuais
+	'combinações de ATO/EVENTO/NATUREZA impossíveis, usado em include_Pagina02.asp
+	Function fnEventoSelecionavel (ato,evento,tipoEmp)
+
+	'TipoEmp:
+	'	1. Empresário (Firma Individual)
+	'	2. Empresa Pública - Sociedade Empresária Limitada
+	'	3. Sociedades Anônimas
+	'	4. Sociedade Empresária LTDA e outras - exceto S/A
+	'	5. Cooperativa
+	'	6. Outras Naturezas Juridicas
+	'	7. MEI - Micro Empreendedor Individual
+
+		Dim result
+		result = True
+
+		'Lista de combinações não permitidas
+		Select Case tipoEmp
+
+			'MEI
+			Case 7
+				'Transformação em Sociedade Empresária Limitada
+				If ato = "002" And evento = "046" Then result = false
+
+
+		End Select
+
+		fnEventoSelecionavel = result
+
+	End Function
+
+    ' =============================================================
+	' 26/04/2011 - Inclusão da Funcão fnResgataStatusProcesso 
+	' Autor      - Flávio Valença
+	' Função     - fnResgataStatusProcesso
+	' Parâmetro  - instatusprocesso identifica o status do processo
+	'              retorna a descrição do status do processo
+    ' =============================================================
+	Function fnResgataStatusProcesso (instatusprocesso)
+		
+		Dim result
+			result = ""
+
+		Select Case instatusprocesso
+
+			Case 0
+				result = "Solicitado que não deu entrada na JUCEPE"
+			Case 1 
+				result = "Em tramitação"
+			Case 2
+				result = "Em exigência"
+			Case 3
+				result = "Deferido"
+			Case 4 
+				result = "Indeferido"
+			Case 5 
+				result = "Desistência"
+			Case 6
+				result = "Suspenso por ordem judicial"
+			Case 7
+				result = "Em condições de aprovação"
+			Case 8 
+				result = "Recebido pelo arquivo"
+			Case 9
+				result = "Autenticado"
+			Case Else
+				result = ""
+
+		End Select
+
+		fnResgataStatusProcesso = result
+
+	End Function
+
+
+    ' ==========================================================
+	' 27/04/2011 - Verifica a situação do Pagamento do processo 
+	' Autor      - Flávio Valença
+	' Função     - fnVerificaSituacaoProcesso
+	' Parâmetros - protocolo - protocolo que deseja consultar
+	'              valordae  - o valor pago para o protocolo
+	' ==========================================================
+	Function fnVerificaSituacaoProcesso(protocolo,valordae)
+
+		Dim BD
+		Set BD = new TBD
+
+		Dim result
+		Dim valorpago
+
+		'Resgata o valor pago
+		call BD.conecta
+		call BD.insereCampoQuery ("PROTOCOLO",protocolo)
+		call BD.abreQuery ("RESGATAVALORPAGO",1)
+
+
+		If IsNull(BD.valor("VALORDAE")) Then
+	        valorpago =	CDbl(0)	
+		Else
+			valorpago = CDbl(BD.valor("VALORDAE"))
+		End If
+
+		If (valorpago <> 0) And (valorpago = CDbl(valordae)) Then result = "SIM" 
+		If (valorpago <> 0) And (valorpago > CDbl(valordae)) Then result = "SIM" 'SIM A MAIOR
+		If (valorpago <> 0) And (valorpago < CDbl(valordae)) Then result = "SIM" 'SIM A MENOR
+		If (valorpago = 0 )									 Then result = "NÃO"
+
+		call BD.desconecta
+		set BD = Nothing
+		
+		fnVerificaSituacaoProcesso = result
+
+	End Function
+
+    ' ==========================================================
+	' 27/04/2011 - Retorna o valor
+	' Autor      - Flávio Valença
+	' Função     - fnResgataValorPagoNaArrecadacao
+	' Parâmetros - protocolo - protocolo que deseja consultar
+	' ==========================================================
+	Function fnResgataValorPagoNaArrecadacao(protocolo)
+
+		Dim BD
+		Set BD = new TBD
+
+		Dim result
+		Dim valorpago
+
+		'Resgata o valor pago
+		call BD.conecta
+		call BD.insereCampoQuery ("PROTOCOLO",protocolo)
+		call BD.abreQuery ("RESGATAVALORARRECADACAO",1)
+
+		If IsNull(BD.valor("VALORPAGO")) Then
+	        valorpago =	CDbl(0)	
+		Else
+			valorpago = CDbl(BD.valor("VALORPAGO"))
+		End If
+
+		call BD.desconecta
+		set BD = Nothing
+		
+		fnResgataValorPagoNaArrecadacao = valorpago
+
+	End Function
+
+    ' =======================================================
+	' 27/04/2011 - Verifica se o processo foi dado entrada
+	'              no siarco
+	' Função     - fnDeuEntrada
+	' Autor      - Flávio Valença
+	' Parâmetros - protocolo - protocolo que deseja consultar
+	' =======================================================
+	Function fnDeuEntrada(protocolo)
+
+		Dim BD
+		Set BD = new TBD
+
+		Dim result
+		Dim valorpago
+
+		'Resgata o valor pago
+		call BD.conecta
+		call BD.insereCampoQuery ("PROTOCOLO",protocolo)
+		call BD.abreQuery ("PROCESSOPORPROTOCOLO",1)
+
+	    result = Not (BD.Eof And BD.Bof)
+
+		Call BD.fechaquery
+		call BD.desconecta
+		set BD = Nothing
+		
+		fnDeuEntrada = result
+
+	End Function
+
+    ' =======================================================
+	' 27/04/2011 - Verifica se o processo foi dado entrada
+	'              no siarco
+	' Função     - fnFormataDocumento
+	' Autor      - Flávio Valença
+	' Parâmetros - protocolo - protocolo que deseja consultar
+	' =======================================================
+   Function fnFormataDocumento(documento)
+		Dim result
+		result = documento
+		If fnIdCpfCnpj(documento) = "CPF" Then result = fnFormataCPF(documento)
+		If fnIdCpfCnpj(documento) = "CNPJ" Then result = fnFormataCNPJ(documento)
+		fnFormataDocumento = result
+   End Function
+
+    ' =======================================================
+	' 17/05/2011 - Verifica se a certidão foi gerada ou 
+	'              marcada as páginas a serem exibidas
+	' Função     - CertidaoFoiGerada             
+	' Autor      - Flávio Valença
+	' Parâmetros - protocolo - protocolo que deseja consultar
+	' =======================================================
+   Function CertidaoFoiGerada
+		Dim BD
+		Set BD = new TBD
+
+		Dim result
+		Dim valorpago
+
+		'Resgata a flag de geração
+		call BD.conecta
+
+		result = false
+			
+		' =====================================================
+		' Verifica se a Certidão Simplificada - 611 foi gerada
+		' =====================================================
+		if (session("DAE").item("codAto") = "611") Then
+			call BD.limpacamposquery
+			call BD.insereCampoQuery ("PROTOCOLO",session("DAE").item("nrProtocolo"))
+			call BD.abreQuery ("CERTIDAO_POR_PROTOCOLO",1)
+
+			If Not (BD.EOF) Then
+				If (BD.valor("FLAGGERADO") = "S") Then
+					result = True
+				End If
+			End If			
+			Call BD.fechaquery
+		End If
+
+		' ==============================================================
+		' Verifica se foram marcadas as páginas a serem entregues e se
+		' as páginas marcadas existem no documento.
+		' Vale para Certidão de Inteiro Teor Internet e outros documentos
+		' ===============================================================
+		if ((session("DAE").item("codAto") <> "611") and  (session("DAE").item("codAto") <> "612")) Then ' Se não for simplificada 	
+			call BD.limpacamposquery
+			call BD.limpacamposquery
+			call BD.insereCampoQuery ("PROTOCOLO",session("DAE").item("ProtocoloArquivadoSolicitado"))
+			call BD.abreQuery ("IMAGEM",1)
+
+			Dim arrayPaginas, ArrayDePaginaInformadoCorretamente, Pag
+			
+			If Not(BD.EOF) Then
+				If Trim(BD.valor("PAGEXIBIR")) <> "" Then
+						arrayPaginas = Split(Replace(BD.valor("PAGEXIBIR"),",",";"),";")
+						ArrayDePaginaInformadoCorretamente = false
+						for i = 0 to ubound (arrayPaginas)	
+						    Pag = CInt(arrayPaginas(i))
+							If (Pag >= 1 And Pag <= CInt(BD.valor("PAGINAS"))) Then
+								ArrayDePaginaInformadoCorretamente = True
+							End If
+						Next
+					If ArrayDePaginaInformadoCorretamente Then
+						result = True
+					End If
+				End If
+			End If
+
+			Call BD.fechaquery
+
+		End If
+
+		' ===========================================================
+		' Verifica se a Certidão Específica Internet - 612 foi gerada
+		' ===========================================================
+		if (session("DAE").item("codAto") = "612") Then
+			
+			' Lembrar de remover
+			'Call BD.conectaDireto("dbjpe01_jucsrvdb02", "dbjpe01", "daegeddbe", "eq3533", "ORACLE")
+			Call BD.conectaDireto("dbjpe01", "dbjpe01", "daegeddbe", "eq3533", "ORACLE")
+			call BD.limpacamposquery
+			call BD.insereCampoQuery ("NR_PROTOCOLO",session("DAE").item("nrProtocolo"))
+			call BD.abreQuery ("SOLICITACAOCERTIDAOESPECIFICA",1)
+
+			If Not (BD.EOF) Then
+				' Para os tipos de certidão 1 e 2 a geração é automática. 
+				' Logo não precisa de resposta do apertador de pitoco
+			    If (BD.valor("TIPOCERTIDAO") = "1") Or (BD.valor("TIPOCERTIDAO") = "2") Then
+				    result = True
+	                ' Nos demais casos precisa da resposta
+				ElseIf (BD.valor("RESPOSTA") <> "NULL")  Then
+					result = True
+				End If
+			Else
+				result = False
+			End IF
+
+			Call BD.fechaquery
+		End If
+	
+		
+		
+		'Fecha a query
+		call BD.desconecta
+		set BD = Nothing
+
+		CertidaoFoiGerada = result
+
+	End Function
+
+
+	'Data 18/05/2011
+	'Autor     - Leandro
+	'Alteração - Flávio Valença	em 18/05/2011  
+	'Função:
+	'	- reqImgFS
+	'
+	'Descrição:
+	'	- Solicita, através do FileSystem, uma imagem
+	'	  A imagem será salva na pasta temporária e o caminho
+	'	  completo para a mesma irá retornar como valor da
+	'	  função (caso não haja erro)
+	'
+	'Requisitos:
+	'	- db
+	'	- adoConst
+	'	- fnGerais
+	'
+	'Parâmetros:
+	'	- us:			Código do usuário (number)
+	'	- pr:			Número do protocolo (string[9])
+	'	- tout:			Tempo de espera pelo servidor (ms)
+	'	- arq:			Nome esperado do arquivo
+	'
+	'Retorno:
+	'	- Nome do arquivo OU
+	'	- Código de erro
+	'		2: Timeout (servidor não respondeu)
+	'		3: Protocolo não encontrado
+	'		4: Imagem não encontrada
+	'		5: Erro não especificado
+	function reqImgFS(pr,tout,arq)
+		dim arquivo, nomeArq, nomeArqImg
+		dim timeInic, timeAtual, s
+		Dim textoCarimbo
+		Dim flgCarimbar
+		Dim direitos
+		Dim restoMensagem
+
+		dim FSO,BD
+		set BD = New TBD
+
+		'Obtém o nome completo do arquivo a partir do protocolo
+		call BD.conecta
+		call BD.insereCampoQuery ("PROTOCOLO",pr)
+		call BD.abreQuery ("CAMINHOIMAGEM_PROTOCOLO",1)
+		if BD.EOF then
+			reqImgFS = 3
+			call BD.desconecta
+			set BD = nothing
+			exit function
+		end if
+		nomeArqImg = BD.valor ("CAMINHO")
+		call BD.fechaQuery
+
+		'Verifica se este arquivo existe aqui (alguma solicitação nas últimas 24h)
+		set FSO = CreateObject("Scripting.FileSystemObject")
+		s = Session ("stCamWeb") & "temp\" & nomeArqImg
+
+		If Not FSO.fileExists(s) then
+
+			'Cria um arquivo-texto com o path + nome do arquivo a ser solicitado
+			nomeArq = Session ("stCamWeb") & "temp\" & "TEOR" & fnFormataData(date,12) & fnFormataHora(time,6) & fnNomeRand (5) & ".tmp"
+'			response.write nomeArq
+'			response.end
+			set arquivo = FSO.OpenTextFile (nomeArq,2,true)
+			arquivo.WriteLine(nomeArqImg)
+			arquivo.close
+			call FSO.moveFile (nomeArq,Replace(nomeArq,".tmp",".req"))
+			set arquivo = nothing
+
+			'Entra em loop (por 'tout' ms) esperando o arquivo com o nome especificado (arq)
+			timeInic = cdbl(timer)
+			s = ""
+			do
+				timeAtual = cdbl(timer)
+				s = Session ("stCamWeb") & "temp\" & fnGetFileName(nomeArqImg)
+
+				If Not FSO.fileExists(s) Then s = ""
+
+
+			loop until	(timeAtual > timeInic + tout/1000) Or (s <> "")
+
+		End If
+
+		'Se houve timeout, retorna erro
+		If s = "" Then 
+			reqImgFS = 2
+			Exit function
+		End If
+		
+		'Retorna o nome da imagem como resultado da função
+		reqImgFs = arq
+
+	End Function
+
+    ' =======================================================
+	' 17/05/2011 - Verifica se o processo foi arquivado
+	' Função     - ProcessoArquivado            
+	' Autor      - Flávio Valença
+	' Parâmetros - protocolo - protocolo que deseja consultar
+	' =======================================================
+   Function ProcessoArquivado(protocolo)
+		Dim BD
+		Set BD = new TBD
+
+		Dim result
+		Dim valorpago
+
+		result = false
+
+		'Resgata a flag de geração
+		call BD.conecta
+		call BD.insereCampoQuery ("PROTOCOLO",protocolo)
+		call BD.abreQuery ("PROCESSOARQUIVADO",1)
+
+		If (BD.EOF) Then
+			result = False
+		ElseIf (IsEmpty(BD.valor("NR_NIRE"))) Then
+		  	result = False
+		ElseIf (Trim(BD.valor("NR_NIRE")) = "") Then
+			result = False
+		Else
+		    result = True
+		End If			
+	
+		'Fecha a query
+		call BD.desconecta
+		set BD = Nothing
+		
+		ProcessoArquivado = result
+
+	End Function
+
+    ' =======================================================
+	' 17/05/2011 - Verifica se o processo foi digitalizado
+	' Função     - ProcessoDigitalizado             
+	' Autor      - Flávio Valença
+	' Parâmetros - protocolo - protocolo que deseja consultar
+	' =======================================================
+   Function ProcessoDigitalizado(protocolo)
+		Dim BD
+		Set BD = new TBD
+
+		Dim result
+
+		result = false
+
+		'Resgata a flag de geração
+		call BD.conecta
+		call BD.insereCampoQuery ("PROTOCOLO",protocolo)
+		call BD.abreQuery ("PROCESSODIGITALIZADO",1)
+
+		If (BD.EOF) Then
+			result = False
+		ElseIf (IsEmpty(BD.valor("NR_PROTOCOLO"))) Then
+		  	result = False
+		ElseIf (Trim(BD.valor("NR_PROTOCOLO")) = "") Then
+			result = False
+		Else
+		    result = True
+		End If			
+	
+		'Fecha a query
+		call BD.desconecta
+		set BD = Nothing
+		
+		ProcessoDigitalizado = result
+
+	End Function
+
+    ' =======================================================
+	' 31/05/2011 - Verifica se o documento pode ser arquivado
+	'              ou seja, o documento será digitalizado e 
+	'              entregue ao cliente
+	' Função     - PodeSerArquivado             
+	' Autor      - Flávio Valença
+	' Parâmetros - protocolo - protocolo que deseja consultar
+	' =======================================================
+	Function PodeSerArquivado(Ato)
+		Dim Atos, Pode
+		Pode = False
+	    Atos = array("001","002","003","004","005","006","007","008","009","010","012","013","014","015","016","017","018","019","020","021","022","048","080","082","090","101","150",	"151","152","201","202","203","205","206","207","208","209","210","212","213","214","215","217","218","225","227","234","301","302","303","304","305","306","307","308","309","310","311","315","316","317","318","402","409","417","418","501","502","600","601","701","710","808","901","902","903","904","980","981","983","984","A01","A02","A03","A04","A05","B02","B03","B04","B05","B06","B07","B08","B09","B10","B11","B12","B13","B14","B15","B16","B17","B18","B20","B21","B25","B27","B29","B30","B31","D05","D06","D09","E10","E11","F00","F01","F07","J98") 
+		For i = 0 to ubound(Atos)
+			If Ato = Atos(i) Then
+				Pode = True
+			End IF
+		Next	
+		PodeSerArquivado = Pode
+	End Function
+
+
+    ' =======================================================
+	' 31/05/2011 - Grava log de atividades
+	' Função     - gravaLog             
+	' Autor      - Leandro
+	' Parâmetros - secao - 
+	' =======================================================	
+	function gravaLog (secao, texto, nivel)
+		dim f, ip
+
+
+		gravaLog = (nivel <= nivelLog)
+		if nivel <= nivelLog then
+
+			ip = right("               " & request.serverVariables("REMOTE_ADDR"),15)
+
+			set f = FSO.openTextFile(session("stCamDados") & "logs\" & fnFormataData(CDate(date+time),12) & ".log", 8, true)
+			f.WriteLine(fnFormataData (date,14) & " " & fnFormataHora(CDate(date+time),1) & " " & ip & " (" & secao & ") - " & texto)
+			f.close
+
+		end if
+
+	end Function
+	
+
+	' =======================================================
+	' 18/10/2011 - Tipo de Certidão Específica
+	' Função     - tipocertidaoespecifica             
+	' Autor      - Flávio Valença
+	' Parâmetros - Código da Certidão - 
+	' =======================================================	
+	Function tipocertidaoespecifica (codigo)
+
+		Dim retorno
+		
+		Select Case codigo
+
+			Case "1"
+				retorno = "De Participação de Pessoa Física em sociedade(exceto S.A e Coop.) "
+			Case "2"
+				retorno = "De Participação de Pessoa Jurídica em sociedade(exceto S.A e Coop.) "
+			Case "3"
+				retorno = "Nada Consta Pessoa Física "
+			Case "4"
+				retorno = "Nada Consta Pessoa Jurídica "
+			Case "5"
+				retorno = "A Definir "
+			Case "6"
+				retorno = "Existência de Empresa (com endereço) "
+			Case Else
+				retorno = ""		
+
+		End Select 
+		
+		tipocertidaoespecifica = retorno
+
+	End Function
+
+    ' =======================================================
+	' 25/11/2011 - Resgata o nome da empresa
+	' Função     - ResgataNomeEmpresa             
+	' Autor      - Flávio Valença
+	' Parâmetros - protocolo - protocolo que deseja consultar
+	'              o nome da empresa
+	' =======================================================
+   Function fnResgataNomeEmpresa(protocolo)
+		Dim BD
+		Set BD = new TBD
+
+		Dim result
+
+		result = ""
+
+		'Resgata a flag de geração
+		call BD.conecta
+		call BD.insereCampoQuery ("NR_PROTOCOLO",protocolo)
+		call BD.abreQuery ("NOMEEMPRESAPORPROTOCOLO",1)
+
+		If Not BD.EOF Then			
+		    result = BD.valor("NO_EMPRESARIAL")
+		End If			
+	
+		'Fecha a query
+		call BD.desconecta
+		set BD = Nothing
+		
+		fnResgataNomeEmpresa = result
+
+	End Function
+
+	Function solicitacaoInterna
+
+		Dim BD
+		Set BD = new TBD
+
+		'Detecta se o documento está sendo gerada na JUCEPE
+		call BD.conecta
+		'Se foi um forward, a indicação é aqui
+		if Trim(request.servervariables("HTTP_X_FORWARDED_FOR")) & "" <> "" then
+			call BD.insereCampoQuery ("IP",request.servervariables("HTTP_X_FORWARDED_FOR"))
+		else
+			call BD.insereCampoQuery ("IP",request.servervariables("REMOTE_ADDR"))
+		end If
+
+		call BD.abreQuery ("IPJUCEPE",1)
+
+		solicitacaoInterna = not BD.EOF
+
+		call BD.desconecta
+		set BD = nothing
+
+	end function
+	
+
+%>

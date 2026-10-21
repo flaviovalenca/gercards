@@ -1,0 +1,71 @@
+<script language="vbscript" runat="server"> 
+
+	sub application_onStart() 
+
+	end sub 
+
+	sub application_onEnd() 
+
+	end sub 
+	
+	sub session_onStart() 
+
+		'Cria a variáveis de aplicação com o caminho do arquivo INI e com
+		'o caminho da raiz WEB
+
+		Dim FSO
+		Dim fl, fc, f, s
+
+		'Cria variáveis de Sessão
+			
+		Session ("stCamWeb") = "C:\sistemasweb\gercards\web"
+		'Session ("urlaplicacao") = "https://gercards.easbr.com"
+		Session ("urlaplicacao") = "http://localhost/gercards"
+		
+		Session ("stCamRaiz") = Request.ServerVariables("APPL_PHYSICAL_PATH")
+		Session ("txtOnStart") = False
+		Session ("ambiente") = "DESENV" 'DESENV OU PROD
+
+		'Limpeza das pastas temporárias (o tempo em segundos)
+		Set FSO = CreateObject("Scripting.FileSystemObject")
+
+		On Error Resume next
+
+		'Pasta temporária do Windows
+		Set f = fso.GetFolder("c:\windows\temp\")
+		Set fc = f.Files
+
+		For Each fl In fc
+			'If (Date + time - CDate(fl.dateCreated)) > 0 Then FSO.deleteFile session("stCamDados") & "\temp\" & fl.name
+			'5 horas de arquivos tempor�rios
+			If Round (CDbl(Date + Time)*100000) > Round (CDate(fl.dateCreated) * 100000) + (60 * 60 * 5) then
+				if ucase(right (fl.name,3))= "TMP" Then
+					FSO.deleteFile "C:\windows\temp\" & fl.name
+				end if
+			End If
+		Next
+
+		On Error goto 0
+
+		Set FSO = Nothing
+
+		'Sessão geral para o início de uma sessão
+		session.LCID = 1046
+		server.scriptTimeout = 480000
+		session.Timeout = 20
+
+		Err.clear
+
+    	'Dicionario de informações da Session CARD
+   	    Set Session("CARD") = Server.CreateObject("Scripting.Dictionary")
+		call Session("CARD").add("LOGADO",false)
+		Session("LOGADO") = false
+
+
+
+	end sub
+
+	sub session_onEnd() 
+
+	end sub
+</script> 

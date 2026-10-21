@@ -1,0 +1,17 @@
+ARQUIVO            DESCRIÇÃO
+-----------------  -------------------------------------------------------------
+_compinst.asp      Chamar esta página apresenta os componentes instalados no IIS
+adoConst.asp       ADO constants include file for VBScript
+clsField.asp       Arquivo usado para upload de arquivos
+clsUpload.asp      Arquivo usado para upload de arquivos
+fnBD.asp           Instancia classes TBD e TDialogo
+fnBD_TBD.asp       Definição da classe de acesso a dados
+fnBD_TDialogo.asp  Definição da classe de montagem de diálogos
+fmCep.asp          Rotina de busca CEP e preenchimento automático de endereço
+fnGEN.asp          Rotinas e definições genéricas de variáveis
+fnGerais.asp       Rotinas de uso geral
+fnIniFiles.asp     Definição da classe de gerência de arquivos INI
+fnMenu.asp         Definição da classe de manipulação de menus
+fnPDF.asp          Definição da classe de geração/manipulação de arquivos PDF
+fnTemplate.asp     Rotinas de montagem de template para envio de mass mailing
+fnUpDown.asp       Rotinas de Upload e Download de arquivos

@@ -1,0 +1,256 @@
+2023-04-15 17:06:11 (20,0 KB/s) - “finlab.dexignzone.com/xhtml/icons/icomoon/fonts/icomoon.woff” salvo [134244/134244]
+
+--2023-04-15 17:06:14--  https://finlab.dexignzone.com/xhtml/icons/icomoon/fonts/icomoon.svg
+Conectando-se a finlab.dexignzone.com (finlab.dexignzone.com)|3.108.101.50|:443... conectado.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 455395 (445K) [image/svg+xml]
+Salvando em: “finlab.dexignzone.com/xhtml/icons/icomoon/fonts/icomoon.svg”
+
+
+
+2023-04-15 17:06:38 (20,0 KB/s) - “finlab.dexignzone.com/xhtml/icons/icomoon/fonts/icomoon.svg” salvo [455395/455395]
+
+--2023-04-15 17:06:41--  https://finlab.dexignzone.com/xhtml/icons/bootstrap-icons/font/fonts/bootstrap-icons.woff?8bd4575acf83c7696dc7a14a966660a3
+Conectando-se a finlab.dexignzone.com (finlab.dexignzone.com)|3.108.101.50|:443... conectado.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 113656 (111K) [application/font-woff]
+Salvando em: “finlab.dexignzone.com/xhtml/icons/bootstrap-icons/font/fonts/bootstrap-icons.woff?8bd4575acf83c7696dc7a14a966660a3.tmp”
+
+
+
+2023-04-15 17:06:48 (20,3 KB/s) - “finlab.dexignzone.com/xhtml/icons/bootstrap-icons/font/fonts/bootstrap-icons.woff?8bd4575acf83c7696dc7a14a966660a3.tmp” salvo [113656/113656]
+
+Removendo finlab.dexignzone.com/xhtml/icons/bootstrap-icons/font/fonts/bootstrap-icons.woff?8bd4575acf83c7696dc7a14a966660a3.tmp já que ele deveria ser rejeitado.
+
+--2023-04-15 17:06:48--  https://finlab.dexignzone.com/xhtml/vendor/lightgallery/fonts/lg.woff?n1z373
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... Nenhum dado foi recebido.
+Tentando novamente.
+
+--2023-04-15 17:06:49--  (tentativa: 2)  https://finlab.dexignzone.com/xhtml/vendor/lightgallery/fonts/lg.woff?n1z373
+Conectando-se a finlab.dexignzone.com (finlab.dexignzone.com)|3.108.101.50|:443... conectado.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 3956 (3,9K) [application/font-woff]
+Salvando em: “finlab.dexignzone.com/xhtml/vendor/lightgallery/fonts/lg.woff?n1z373.tmp”
+
+     0K ...                                                   100% 1,84G=0s
+
+2023-04-15 17:06:51 (1,84 GB/s) - “finlab.dexignzone.com/xhtml/vendor/lightgallery/fonts/lg.woff?n1z373.tmp” salvo [3956/3956]
+
+Removendo finlab.dexignzone.com/xhtml/vendor/lightgallery/fonts/lg.woff?n1z373.tmp já que ele deveria ser rejeitado.
+
+--2023-04-15 17:06:54--  https://finlab.dexignzone.com/xhtml/vendor/lightgallery/fonts/lg.ttf?n1z373
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 3880 (3,8K) [application/x-font-ttf]
+Salvando em: “finlab.dexignzone.com/xhtml/vendor/lightgallery/fonts/lg.ttf?n1z373.tmp”
+
+     0K ...                                                   100%  740M=0s
+
+2023-04-15 17:06:54 (740 MB/s) - “finlab.dexignzone.com/xhtml/vendor/lightgallery/fonts/lg.ttf?n1z373.tmp” salvo [3880/3880]
+
+Removendo finlab.dexignzone.com/xhtml/vendor/lightgallery/fonts/lg.ttf?n1z373.tmp já que ele deveria ser rejeitado.
+
+--2023-04-15 17:06:57--  https://finlab.dexignzone.com/xhtml/vendor/lightgallery/fonts/lg.svg?n1z373
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 8855 (8,6K) [image/svg+xml]
+Salvando em: “finlab.dexignzone.com/xhtml/vendor/lightgallery/fonts/lg.svg?n1z373.tmp”
+
+     0K ........                                              100% 22,5K=0,4s
+
+2023-04-15 17:06:58 (22,5 KB/s) - “finlab.dexignzone.com/xhtml/vendor/lightgallery/fonts/lg.svg?n1z373.tmp” salvo [8855/8855]
+
+Removendo finlab.dexignzone.com/xhtml/vendor/lightgallery/fonts/lg.svg?n1z373.tmp já que ele deveria ser rejeitado.
+
+--2023-04-15 17:07:01--  https://finlab.dexignzone.com/xhtml/vendor/lightgallery/img/vimeo-play.png
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 5428 (5,3K) [image/png]
+Salvando em: “finlab.dexignzone.com/xhtml/vendor/lightgallery/img/vimeo-play.png”
+
+     0K .....                                                 100% 19,9K=0,3s
+
+2023-04-15 17:07:02 (19,9 KB/s) - “finlab.dexignzone.com/xhtml/vendor/lightgallery/img/vimeo-play.png” salvo [5428/5428]
+
+--2023-04-15 17:07:05--  https://finlab.dexignzone.com/xhtml/vendor/lightgallery/img/video-play.png
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 4526 (4,4K) [image/png]
+Salvando em: “finlab.dexignzone.com/xhtml/vendor/lightgallery/img/video-play.png”
+
+     0K ....                                                  100% 19,9K=0,2s
+
+2023-04-15 17:07:05 (19,9 KB/s) - “finlab.dexignzone.com/xhtml/vendor/lightgallery/img/video-play.png” salvo [4526/4526]
+
+--2023-04-15 17:07:08--  https://finlab.dexignzone.com/xhtml/vendor/lightgallery/img/youtube-play.png
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 5177 (5,1K) [image/png]
+Salvando em: “finlab.dexignzone.com/xhtml/vendor/lightgallery/img/youtube-play.png”
+
+     0K .....                                                 100% 19,7K=0,3s
+
+2023-04-15 17:07:09 (19,7 KB/s) - “finlab.dexignzone.com/xhtml/vendor/lightgallery/img/youtube-play.png” salvo [5177/5177]
+
+--2023-04-15 17:07:12--  https://finlab.dexignzone.com/xhtml/vendor/lightgallery/img/loading.gif
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 4178 (4,1K) [image/gif]
+Salvando em: “finlab.dexignzone.com/xhtml/vendor/lightgallery/img/loading.gif”
+
+     0K ....                                                  100% 19,8K=0,2s
+
+2023-04-15 17:07:12 (19,8 KB/s) - “finlab.dexignzone.com/xhtml/vendor/lightgallery/img/loading.gif” salvo [4178/4178]
+
+--2023-04-15 17:07:15--  https://finlab.dexignzone.com/xhtml/images/noimage.jpg
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 6279 (6,1K) [image/jpeg]
+Salvando em: “finlab.dexignzone.com/xhtml/images/noimage.jpg”
+
+     0K ......                                                100% 19,7K=0,3s
+
+2023-04-15 17:07:16 (19,7 KB/s) - “finlab.dexignzone.com/xhtml/images/noimage.jpg” salvo [6279/6279]
+
+--2023-04-15 17:07:19--  https://finlab.dexignzone.com/xhtml/vendor/tagify/dist/tagify.css
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 10867 (11K) [text/css]
+Salvando em: “finlab.dexignzone.com/xhtml/vendor/tagify/dist/tagify.css”
+
+     0K ..........                                            100% 27,8K=0,4s
+
+2023-04-15 17:07:20 (27,8 KB/s) - “finlab.dexignzone.com/xhtml/vendor/tagify/dist/tagify.css” salvo [10867/10867]
+
+--2023-04-15 17:07:23--  https://finlab.dexignzone.com/xhtml/vendor/tagify/dist/tagify.js
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 155206 (152K) [application/x-javascript]
+Salvando em: “finlab.dexignzone.com/xhtml/vendor/tagify/dist/tagify.js”
+
+     0K .......... .......... .......... .......... .......... 32% 18,4K 6s
+    50K .......... .......... .......... .......... .......... 65% 21,3K 3s
+   100K .......... .......... .......... .......... .......... 98% 21,3K 0s
+   150K .                                                     100% 31,4K=7,4s
+
+2023-04-15 17:07:31 (20,5 KB/s) - “finlab.dexignzone.com/xhtml/vendor/tagify/dist/tagify.js” salvo [155206/155206]
+
+--2023-04-15 17:07:34--  https://finlab.dexignzone.com/xhtml/vendor/jquery-asColorPicker/images/transparent.png
+Conectando-se a finlab.dexignzone.com (finlab.dexignzone.com)|3.108.101.50|:443... conectado.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 1233 (1,2K) [image/png]
+Salvando em: “finlab.dexignzone.com/xhtml/vendor/jquery-asColorPicker/images/transparent.png”
+
+     0K .                                                     100%  392M=0s
+
+2023-04-15 17:07:41 (392 MB/s) - “finlab.dexignzone.com/xhtml/vendor/jquery-asColorPicker/images/transparent.png” salvo [1233/1233]
+
+--2023-04-15 17:07:44--  https://finlab.dexignzone.com/xhtml/vendor/jquery-asColorPicker/images/saturation.png
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 14976 (15K) [image/png]
+Salvando em: “finlab.dexignzone.com/xhtml/vendor/jquery-asColorPicker/images/saturation.png”
+
+     0K .......... ....                                       100% 19,9K=0,7s
+
+2023-04-15 17:07:45 (19,9 KB/s) - “finlab.dexignzone.com/xhtml/vendor/jquery-asColorPicker/images/saturation.png” salvo [14976/14976]
+
+--2023-04-15 17:07:48--  https://finlab.dexignzone.com/xhtml/vendor/jquery-asColorPicker/images/hue.png
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 1805 (1,8K) [image/png]
+Salvando em: “finlab.dexignzone.com/xhtml/vendor/jquery-asColorPicker/images/hue.png”
+
+     0K .                                                     100% 1,68G=0s
+
+2023-04-15 17:07:48 (1,68 GB/s) - “finlab.dexignzone.com/xhtml/vendor/jquery-asColorPicker/images/hue.png” salvo [1805/1805]
+
+--2023-04-15 17:07:51--  https://finlab.dexignzone.com/xhtml/vendor/jquery-asColorPicker/images/alpha.png
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 3158 (3,1K) [image/png]
+Salvando em: “finlab.dexignzone.com/xhtml/vendor/jquery-asColorPicker/images/alpha.png”
+
+     0K ...                                                   100% 1,47G=0s
+
+2023-04-15 17:07:52 (1,47 GB/s) - “finlab.dexignzone.com/xhtml/vendor/jquery-asColorPicker/images/alpha.png” salvo [3158/3158]
+
+--2023-04-15 17:07:55--  https://finlab.dexignzone.com/DataTables-1.11.5/images/sort_both.png
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 302 Found
+Localização: https://finlab.dexignzone.com/xhtml/page-error-404.html [redirecionando]
+--2023-04-15 17:07:58--  https://finlab.dexignzone.com/xhtml/page-error-404.html
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 2225 (2,2K) [text/html]
+Salvando em: “finlab.dexignzone.com/DataTables-1.11.5/images/sort_both.png”
+
+     0K ..                                                    100% 1,04G=0s
+
+2023-04-15 17:07:58 (1,04 GB/s) - “finlab.dexignzone.com/DataTables-1.11.5/images/sort_both.png” salvo [2225/2225]
+
+--2023-04-15 17:08:01--  https://finlab.dexignzone.com/DataTables-1.11.5/images/sort_asc.png
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 302 Found
+Localização: https://finlab.dexignzone.com/xhtml/page-error-404.html [redirecionando]
+--2023-04-15 17:08:05--  https://finlab.dexignzone.com/xhtml/page-error-404.html
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 2225 (2,2K) [text/html]
+Salvando em: “finlab.dexignzone.com/DataTables-1.11.5/images/sort_asc.png”
+
+     0K ..                                                    100% 1,04G=0s
+
+2023-04-15 17:08:05 (1,04 GB/s) - “finlab.dexignzone.com/DataTables-1.11.5/images/sort_asc.png” salvo [2225/2225]
+
+--2023-04-15 17:08:08--  https://finlab.dexignzone.com/DataTables-1.11.5/images/sort_desc.png
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 302 Found
+Localização: https://finlab.dexignzone.com/xhtml/page-error-404.html [redirecionando]
+--2023-04-15 17:08:11--  https://finlab.dexignzone.com/xhtml/page-error-404.html
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 2225 (2,2K) [text/html]
+Salvando em: “finlab.dexignzone.com/DataTables-1.11.5/images/sort_desc.png”
+
+     0K ..                                                    100% 1,04G=0s
+
+2023-04-15 17:08:12 (1,04 GB/s) - “finlab.dexignzone.com/DataTables-1.11.5/images/sort_desc.png” salvo [2225/2225]
+
+--2023-04-15 17:08:15--  https://finlab.dexignzone.com/DataTables-1.11.5/images/sort_asc_disabled.png
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... Nenhum dado foi recebido.
+Tentando novamente.
+
+--2023-04-15 17:08:18--  (tentativa: 2)  https://finlab.dexignzone.com/DataTables-1.11.5/images/sort_asc_disabled.png
+Conectando-se a finlab.dexignzone.com (finlab.dexignzone.com)|3.108.101.50|:443... conectado.
+A requisição HTTP foi enviada, aguardando resposta... 302 Found
+Localização: https://finlab.dexignzone.com/xhtml/page-error-404.html [redirecionando]
+--2023-04-15 17:08:22--  https://finlab.dexignzone.com/xhtml/page-error-404.html
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 2225 (2,2K) [text/html]
+Salvando em: “finlab.dexignzone.com/DataTables-1.11.5/images/sort_asc_disabled.png”
+
+     0K ..                                                    100% 1,04G=0s
+
+2023-04-15 17:08:22 (1,04 GB/s) - “finlab.dexignzone.com/DataTables-1.11.5/images/sort_asc_disabled.png” salvo [2225/2225]
+
+--2023-04-15 17:08:25--  https://finlab.dexignzone.com/DataTables-1.11.5/images/sort_desc_disabled.png
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 302 Found
+Localização: https://finlab.dexignzone.com/xhtml/page-error-404.html [redirecionando]
+--2023-04-15 17:08:29--  https://finlab.dexignzone.com/xhtml/page-error-404.html
+Reaproveitando a conexão existente para finlab.dexignzone.com:443.
+A requisição HTTP foi enviada, aguardando resposta... 200 OK
+Tamanho: 2225 (2,2K) [text/html]
+Salvando em: “finlab.dexignzone.com/DataTables-1.11.5/images/sort_desc_disabled.png”
+
+     0K ..                                                    100% 2,07G=0s
+
+2023-04-15 17:08:29 (2,07 GB/s) - “finlab.dexignzone.com/DataTables-1.11.5/images/sort_desc_disabled.png” salvo [2225/2225]
+
+FINALIZADO --2023-04-15 17:08:29--
+Tempo total decorrido: 6h 57m 22s
+Baixados: 393 arquivos, 31M em 6h 30m 50s (1,37 KB/s)

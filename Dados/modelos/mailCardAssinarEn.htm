@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+     	
+    <meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="author" content="" >
+	<meta name="robots" content="" >
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Atlântico Sul - Heavy Industry Solutions" >
+	<meta property="og:title" content="Atlântico Sul - Heavy Industry Solutions" >
+	<meta property="og:description" content="Atlântico Sul - Heavy Industry Solutions" >	
+	<meta name="format-detection" content="telephone=no">
+	
+	<!-- PAGE TITLE HERE -->
+	<title id="titlepage">Atlântico Sul - Heavy Industry Solutions </title>
+	<!-- FAVICONS ICON -->
+	<link rel="shortcut icon" type="image/png" href="https://gercards.easbr.com/images/favicon.png" >
+
+    <!-- Datatable -->
+    <link href="https://gercards.easbr.com/vendor/datatables/css/jquery.dataTables.min.css" rel="stylesheet">
+    <link href="https://gercards.easbr.com/vendor/datatables/css/buttons.dataTables.min.css" rel="stylesheet">
+
+    <link href="https://gercards.easbr.com/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://gercards.easbr.com/vendor/jquery-nice-select/css/nice-select.css">
+    <link href="https://gercards.easbr.com/vendor/bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://gercards.easbr.com/vendor/select2/css/select2.min.css">
+
+	<!-- Pick date -->
+	<link rel="stylesheet" href="https://gercards.easbr.com/vendor/pickadate/themes/default.css">
+	<link rel="stylesheet" href="https://gercards.easbr.com/vendor/pickadate/themes/default.date.css">
+	<link href="https://gercards.easbr.com/vendor/datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<link href="https://gercards.easbr.com/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
+	<!-- Custom Stylesheet -->
+	
+    <!-- Custom Stylesheet -->
+	<link href="https://gercards.easbr.com/vendor/jquery-nice-select/css/nice-select.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
+    <link href="https://gercards.easbr.com/css/style.css" rel="stylesheet">
+
+    <style>
+
+        .btn.btn-success, .btn.btn-secondary, .btn.btn-warning, .btn.btn-primary, .btn.btn-danger, .btn.btn-info {
+            color: #fff; }
+  
+
+    .btn {
+    --bs-btn-padding-x: 0.75rem;
+    --bs-btn-padding-y: 0.375rem;
+    --bs-btn-font-family: ;
+    --bs-btn-font-size: 0.875rem;
+    --bs-btn-font-weight: 400;
+    --bs-btn-line-height: 1.5;
+    --bs-btn-color: #717579;
+    --bs-btn-bg: transparent;
+    --bs-btn-border-width: 1px;
+    --bs-btn-border-color: transparent;
+    --bs-btn-border-radius: 0.25rem;
+    --bs-btn-hover-border-color: transparent;
+    --bs-btn-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 1px 1px rgba(0, 0, 0, 0.075);
+    --bs-btn-disabled-opacity: 0.65;
+    --bs-btn-focus-box-shadow: 0 0 0 0.25rem rgba(var(--bs-btn-focus-shadow-rgb), .5);
+    display: inline-block;
+    padding: var(--bs-btn-padding-y) var(--bs-btn-padding-x);
+    font-family: var(--bs-btn-font-family);
+    font-size: var(--bs-btn-font-size);
+    font-weight: var(--bs-btn-font-weight);
+    line-height: var(--bs-btn-line-height);
+    color: var(--bs-btn-color);
+    text-align: center;
+    text-decoration: none;
+    vertical-align: middle;
+    cursor: pointer;
+    user-select: none;
+    border: var(--bs-btn-border-width) solid var(--bs-btn-border-color);
+    border-radius: var(--bs-btn-border-radius);
+    background-color: var(--bs-btn-bg);
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
+    @media (prefers-reduced-motion: reduce) {
+        .btn {
+        transition: none; } }
+    .btn:hover {
+        color: var(--bs-btn-hover-color);
+        background-color: var(--bs-btn-hover-bg);
+        border-color: var(--bs-btn-hover-border-color); }
+    .btn-check + .btn:hover {
+        color: var(--bs-btn-color);
+        background-color: var(--bs-btn-bg);
+        border-color: var(--bs-btn-border-color); }
+    .btn:focus-visible {
+        color: var(--bs-btn-hover-color);
+        background-color: var(--bs-btn-hover-bg);
+        border-color: var(--bs-btn-hover-border-color);
+        outline: 0;
+        box-shadow: var(--bs-btn-focus-box-shadow); }
+    .btn-check:focus-visible + .btn {
+        border-color: var(--bs-btn-hover-border-color);
+        outline: 0;
+        box-shadow: var(--bs-btn-focus-box-shadow); }
+    .btn-check:checked + .btn,
+    :not(.btn-check) + .btn:active, .btn:first-child:active, .btn.active, .btn.show {
+        color: var(--bs-btn-active-color);
+        background-color: var(--bs-btn-active-bg);
+        border-color: var(--bs-btn-active-border-color); }
+        .btn-check:checked + .btn:focus-visible,
+        :not(.btn-check) + .btn:active:focus-visible, .btn:first-child:active:focus-visible, .btn.active:focus-visible, .btn.show:focus-visible {
+        box-shadow: var(--bs-btn-focus-box-shadow); }
+    .btn:disabled, .btn.disabled,
+    fieldset:disabled .btn {
+        color: var(--bs-btn-disabled-color);
+        pointer-events: none;
+        background-color: var(--bs-btn-disabled-bg);
+        border-color: var(--bs-btn-disabled-border-color);
+        opacity: var(--bs-btn-disabled-opacity); }
+
+
+
+        .btn-primary {
+        --bs-btn-color: #000;
+        --bs-btn-bg: #01A3FF;
+        --bs-btn-border-color: #01A3FF;
+        --bs-btn-hover-color: #000;
+        --bs-btn-hover-bg: #27b1ff;
+        --bs-btn-hover-border-color: #1aacff;
+        --bs-btn-focus-shadow-rgb: 1, 139, 217;
+        --bs-btn-active-color: #000;
+        --bs-btn-active-bg: #34b5ff;
+        --bs-btn-active-border-color: #1aacff;
+        --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+        --bs-btn-disabled-color: #000;
+        --bs-btn-disabled-bg: #01A3FF;
+        --bs-btn-disabled-border-color: #01A3FF; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 85%;
+            margin: 10px auto;
+            padding: 10px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .thead-dark th {
+            background-color: #333;
+            color: #fff;
+        }
+    </style>
+	
+</head>
+
+<body>
+
+    <!--*******************
+        Preloader start
+    ********************-->
+    	
+    <div id="preloader">
+	  <div class="loader"></div>
+	</div>
+    <!--*******************
+        Preloader end
+    ********************-->
+
+
+    <!--**********************************
+        Main wrapper start
+    ***********************************-->
+    <div id="main-wrapper">
+
+        
+        <!--**********************************
+            Content body start
+        ***********************************-->
+        <div class="content-body">
+            <div class="container-fluid">
+				<div class="row">
+					<div class="col-xl-12">						
+						<div class="row text-start">
+							<div class="col-xl-12 col-xxl-8">
+								<div class="card">
+									<div class="card-body">
+										<div class="d-flex flex-wrap">											
+											<div class="container">
+												<h2 class="card-title">Dear  #NOME_ASSINANTE#,</h2> 												
+												<div class="about-content">													
+													<p>EASBR informs you that card <b>#ID_CARDS#</b> has been generated and requires your signature.</p>
+                                                    <p>To complete the signing process, click the link below or copy it into your browser.</p>
+                                                    <p>When redirected to the system, enter your access credentials.</p>
+													<p><a href="#URL_GERCARDS#" class="btn btn-primary">Click here to access the signing system.</a></p>													
+													<p> <b>Card Information</b></p>
+                                                    <div class="container">
+                                                    <table class="table table-bordered" style="width:70%;">                                                        
+                                                        <tbody>
+                                                            <tr>
+                                                                <td>Requester</td>
+                                                                <td>#NOME_REQUISITANTE#</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Requested on</td>
+                                                                <td>#DATA_SOLICITACAO#</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Detail</td>
+                                                                <td>#DESCRICAO#</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Unit of Measure</td>
+                                                                <td>#QUANTIDADE# (#DESCRICAO_UNIDADE#) </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Contract</td>
+                                                                <td>#NUMERO_CONTRATO#</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Company</td>
+                                                                <td>#NOME_EMPRESA#</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Ship</td>
+                                                                <td>#NOME_NAVIO#</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Start Date</td>
+                                                                <td>#DATA_INICIO#</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>End Date</td>
+                                                                <td>#DATA_TERMINO#</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                    </div>	
+                                                    <p>For further information, please contact EASBR or send an email to <b>comercial@easbr.com </b>.</p>
+													<p>Sincerely,</p>
+													<p><b>EASBR Team</b></p>
+                                                    												
+												</div>
+											</div>
+										</div>										
+									</div>
+								</div>
+							</div>							
+							</div>
+						</div>
+					</div>
+            </div>
+        </div>
+    
+
+        <!--**********************************
+           Support ticket button start
+        ***********************************-->
+
+        <!--**********************************
+           Support ticket button end
+        ***********************************-->
+
+        
+    </div>
+    <!--**********************************
+        Main wrapper end
+    ***********************************-->
+
+    <!--**********************************
+        Scripts
+    ***********************************-->
+    <!-- Required vendors -->
+    <script src="https://gercards.easbr.com/vendor/global/global.min.js"></script>
+    <script src="https://gercards.easbr.com/vendor/chart.js/Chart.bundle.min.js"></script>
+    
+    <!--select plugins-file-->
+	<script src="https://gercards.easbr.com/vendor/select2/js/select2.full.min.js"></script>
+	<script src="https://gercards.easbr.com/js/plugins-init/select2-init.js"></script>
+    
+	<!-- Apex Chart -->
+	<script src="https://gercards.easbr.com/vendor/apexchart/apexchart.js"></script>
+	
+    <!-- Datatable -->
+    <script src="https://gercards.easbr.com/vendor/datatables/js/jquery.dataTables.min.js"></script>
+	<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+	<script type="text/javascript" language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+	<script type="text/javascript" language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+	<script type="text/javascript" language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+	<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+	<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+    <script src="https://gercards.easbr.com/js/plugins-init/datatables.init.js?v=1.0"></script>
+
+	<script src="https://gercards.easbr.com/vendor/jquery-nice-select/js/jquery.nice-select.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.blockUI/2.70/jquery.blockUI.min.js"></script>
+
+    <script src="https://gercards.easbr.com/js/dashboard/cms.js"></script>
+    <script src="https://gercards.easbr.com/js/custom.min.js"></script>
+	<script src="https://gercards.easbr.com/js/dlabnav-init.js"></script>
+	<script src="https://gercards.easbr.com/js/demo.js"></script>
+
+
+	<!-- Daterangepicker -->
+    <!-- momment js is must -->
+    <script src="https://gercards.easbr.com/vendor/moment/moment.min.js"></script>
+    <script src="https://gercards.easbr.com/vendor/bootstrap-daterangepicker/daterangepicker.js"></script>
+        
+    <!-- asColorPicker -->
+    <script src="https://gercards.easbr.com/vendor/jquery-ascolor/jquery-ascolor.min.js"></script>
+    <script src="https://gercards.easbr.com/vendor/jquery-asgradient/jquery-asgradient.min.js"></script>
+    <script src="https://gercards.easbr.com/vendor/jquery-ascolorpicker/js/jquery-ascolorpicker.min.js"></script>
+    <!-- Material color picker -->
+    <script src="https://gercards.easbr.com/vendor/bootstrap-material-datetimepicker/js/bootstrap-material-datetimepicker.js"></script>
+	<script src="https://gercards.easbr.com/vendor/bootstrap-datepicker-master/js/bootstrap-datepicker.min.js"></script>
+    <!-- pickdate -->
+    <script src="https://gercards.easbr.com/vendor/pickadate/picker.js"></script>
+    <script src="https://gercards.easbr.com/vendor/pickadate/picker.time.js"></script>
+    <script src="https://gercards.easbr.com/vendor/pickadate/picker.date.js"></script>
+
+
+    <!-- Daterangepicker -->
+    <script src="https://gercards.easbr.com/js/plugins-init/bs-daterange-picker-init.js"></script>
+    <!-- asColorPicker init -->
+    <script src="https://gercards.easbr.com/js/plugins-init/jquery-ascolorpicker.init.js"></script>
+    <!-- Material color picker init -->
+    <script src="https://gercards.easbr.com/js/plugins-init/material-date-picker-init.js"></script>
+    <!-- Pickdate -->
+    <script src="https://gercards.easbr.com/js/plugins-init/pickadate-init.js"></script>
+    
+	<script src="https://gercards.easbr.com/js/cards.js"></script>
+	<script src="https://gercards.easbr.com/js/common.js"></script>
+
+    <script>
+          function fixEncoding(content) {
+            // Converte a string codificada para uma cadeia de bytes
+            var bytes = [];
+            for (var i = 0; i < content.length; ++i) {
+                bytes.push(content.charCodeAt(i));
+            }
+
+            // Decodifica os bytes como UTF-8
+            var decoder = new TextDecoder('utf-8');
+            var fixedContent = decoder.decode(new Uint8Array(bytes));
+
+            return fixedContent;
+        }
+
+        function traverseAndFixEncoding(node) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                node.textContent = fixEncoding(node.textContent);
+                node.parentElement.classList.add('fixed-encoding'); // Opcional: adiciona classe para estilo visual
+            } else {
+                for (var i = 0; i < node.childNodes.length; i++) {
+                    traverseAndFixEncoding(node.childNodes[i]);
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var mainWrapper = document.getElementById('main-wrapper');
+            traverseAndFixEncoding(mainWrapper);
+        });
+</script>
+
+	
+</body>
+</html>

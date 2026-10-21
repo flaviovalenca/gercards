@@ -1,0 +1,13 @@
+docker  run --name oracle19c -p 1521:1521 -p 5500:5500 -v /C/Sistemas/oracle-docker/oracledata:/opt/oracle/oradata oracle/database:19.3.0-ee
+
+-- Criar a senha do banco 
+docker exec oracle19c ./setPassword.sh boranei24
+
+-- Conectar o oracle pelo container docker
+
+docker ps 
+docker exec -ti CONTANINER_ID sqlplus system/Welcome1@orclpdb1
+
+docker exec -ti 1474ddb8b5dc sqlplus sys as sysdba/boranei24@orclpdb1
+
+

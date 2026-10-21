@@ -1,0 +1,153 @@
+<%
+	option explicit
+	randomize
+
+	'Tempo de timeout (24 horas?)
+	server.scripttimeout = 86400
+
+	'Nível do Log:
+	' 0. Nenhum log
+	' 1. Eventos sem os detalhes
+	' 2. Detalhamento do evento
+	' 3. Etapas do detalhamento do evento
+	Dim nivelLog
+	nivelLog = 3
+
+	'Anti-cache
+'	Response.Expires=0
+'	Response.Buffer = True 
+'	Response.ExpiresAbsolute = Now() - 1
+'	Response.CacheControl = "no-cache"
+'	Response.AddHeader "cache-control", "private" 
+'	Response.AddHeader "pragma", "no-cache"
+
+
+	'Padrão de mensagem de sucesso
+	Const msgOk = "OK"
+
+	'Identificação do modo DEBUG
+	Dim debugMode
+	debugMode = false
+
+	'Objeto global de manipulação de arquivos
+	Dim FSO
+	Set FSO = CreateObject("Scripting.FileSystemObject")
+
+	'Estado (UF) do usuário
+	dim estUs
+	estUs = "PE"
+
+	'Perfis de usuário
+	dim   codPerfilUsuarioWeb			'Perfil de usuário WEB
+
+	codPerfilUsuarioWeb				= 9
+
+	'E-mail de contato
+	const mailREM					= "jucepe@jucepe.pe.gov.br"
+	const mailBCC					= ""'"leandro.ferreira@jucepe.pe.gov.br"
+	const urlApp					= "http://www.jucepe.pe.gov.br/"
+	const urlAppS					= "https://www.jucepe.pe.gov.br/"
+
+	'Número de itens por página de busca
+	if session ("resPag") & ""		= "" then session ("resPag") = 30
+
+	'Busca o endereço remoto
+	if session ("remote_addr") & "" = "" then session ("remote_addr") = request.servervariables ("remote_addr")
+
+	'Definições específicas da aplicação
+
+	Dim anoProtocoloDAE	'Ano da geração do protocolo do DAE [geralmente = year(date)]
+	anoProtocoloDAE					= year(date)
+
+	dim valorImpressaoJucepe			'Valor da impressão do DAE internamente
+	valorImpressaoJucepe			= 1.00
+
+	dim valorCustoDAE					'Valor do custo de um DAE pago para a Jucepe
+	valorCustoDAE					= 1.35
+
+	dim cobraValorInferiorCustoDAE		'Indica se é para gerar DAE inferior ao custo
+	cobraValorInferiorCustoDAE = false	'que o banco cobra à JUCEPE
+
+	dim usuarioDaeArrecadacao
+	usuarioDaeArrecadacao			= "NOVODAE"
+
+ '===========================================================================================
+ ' Definições específicas da Assinatura Digital de Documentos
+ ' Autor - Flávio Valença
+ ' Data - 21/09/2011
+ '===========================================================================================
+
+ ' Marca d'água a ser colocada no PDF
+ Const imgMarcaDaguaParaConferencia = "C:\\Sistemas\\AssinadorDocumento\\images\\conferencia.png"
+ Const imgMarcaDaguaParaRecebimento = "C:\\Sistemas\\AssinadorDocumento\\images\\brasao20cinza%.png"
+
+ ' Certificado A1
+ 'Const CertificadoPfx				= "C:\\Sistemas\\AssinadorDocumento\\docs\\jucepe.pe.gov.br.pfx"
+ 'Const CertificadoPassWord			= "luquita"
+
+ 'Const CertificadoPfx				= "C:\\Sistemas\\AssinadorDocumento\\docs\\CertificadoJucepeProd.pfx"
+ 'Const CertificadoPassWord			= "281271" 
+
+ Const CertificadoPfx				= "C:\\Sistemas\\AssinadorDocumento\\certificados\\roldaobarreto.pfx"
+ Const CertificadoPassWord			= "12541099"
+
+
+ ' Metadados do Certificado
+ Const MetadadosAutor               = "WWW.JUCEPE.PE.GOV.BR"
+ Const MetadadosTitle               = "JUCEPE"
+ Const MetadadosSubject             = ""
+ Const MetadadosKeyWords            = ""
+ Const MetadadosCreator             = "JUCEPE"
+ Const MetadadosProducer            = "WWW.JUCEPE.PE.GOV.BR"
+
+ ' Signature do Certificado
+ Const SignatureReason				= "DOCUMENTO DE REGISTRO E COMÉRCIO"
+ Const SignatureContact				= "WWW.JUCEPE.PE.GOV.BR"
+ Const SignatureLocation			= "RECIFE-PE"
+ Const SignatureSigVisible          = True
+
+ ' Define as imagens de logomarca da JUCEPE       
+ Const imgLogo					    = "C:\\Sistemas\\AssinadorDocumento\\images\\jucepe.png"
+ Const imgLogoCapa				    = "C:\\Sistemas\\AssinadorDocumento\\images\\brasao-br.gif"
+ Const imgretCapa				    = "C:\\Sistemas\\AssinadorDocumento\\images\\bgHeader.gif"
+ Const orgaosubordinado			    = "SECRETARIA DE DESENVOLVIMENTO ECONÔMICO"
+ Const enderecoautenticidade        = "http://wwww.jucepe.pe.gov.br/autenticidade"
+ Const imgMarcaDagua                = "C:\\Sistemas\\AssinadorDocumento\\images\\MarcaDagua.png"
+
+ ' Informações do assinador de documento
+ Const imgAssinaturaResponsavel	    = "C:\\SistemasWeb\\novodae\\Dados\\PDF\\RoldaoAlvesPaesBarreto.gif"
+ Const NomeResponsavelAssinatura	= "Roldão Alves Paes Barreto"
+ Const CargoResponsavelAssinatura	= "Secretário Geral"
+
+ '===========================================================================================
+ ' FIM
+ ' Definições específicas da Assinatura Digital de Documentos
+ ' Autor - Flávio Valença
+ ' Data - 21/09/2011
+ '===========================================================================================
+
+ '===========================================================================================
+ ' FLAG IMPORTANTE - GERA DOCUMENTO SEM CONFIRMAR PAGAMENTO - USADA APENAS NO DESENVOLVIMENTO
+ ' Autor - Flávio Valença
+ ' Data - 21/09/2011
+ '===========================================================================================
+ Const GeraDocumentoSemConfirmarPagamento = False
+ '===========================================================================================
+ ' FIM - FLAG IMPORTANTE - NÃO CONSULTA PAGAMENTO
+ ' Autor - Flávio Valença
+ ' Data - 21/09/2011
+ '===========================================================================================
+
+ ' Flag para Permitir emitir certidão simplificada internet
+ Const EmiteCertidaoSimplificadaInternet = True
+
+ ' Flag para Permitir emitir certidão de Inteiro Teor Internet
+ Const EmiteCertidaoInteiroTeorInternet = False
+
+ ' Flag para Permitir emitir certidão específica Internet
+ Const EmiteCertidaoEspecificaInternet = False
+
+ ' Flag para Permitir obter processo digital
+ Const EmiteDocumentoDigital = False
+
+%>

@@ -1,0 +1,45 @@
+MODELO DIALOGO
+
+'Título do documento
+T:TESTE
+
+'Categoria onde ele se agrupa
+C:/Teste
+
+'Campo Select com os Estados brasileiros
+S:SelUF,PE,AC,AL,AM,AP,BA,CE,DF,ES,GO,MA,MG,MS,MT,PA,PB,PI,PR,RJ,RN,RO,RR,RS,SC,SE,SP,TO
+
+D:Divisor
+F:DINHEIRO, Dinheiro, V, 12, DINHEIRO_EXTENSO
+F:DINHEIRO_EXTENSO, Extenso, VE, 50
+F:QUOTAS, Quotas,N, 10, QUOTAS_EXTENSO
+F:QUOTAS_EXTENSO, Quotas Ex,VE, 50
+D:Divisor
+
+F:ENDCEP,CEP, C, ENDLOGR, ENDNUM, ENDCOMPL, ENDBAIRRO, ENDCIDADE, ENDUF
+
+F:ENDLOGR, Logradouro, T, 50
+F:ENDNUM, Número, T, 6
+F:ENDBAIRRO, Bairro, T, 30
+F:ENDCIDADE, Cidade, T, 30
+F:ENDUF, Estado, S, SelUF
+
+B:Enviar,POST
+
+
+'Estes são textos de exemplo para as orientações
+'Observe que em campos repetidos (Ex: NOME_SOCIO%), não se deve colocar o porcento
+'Observe também que não é permitido digitar vírgulas no texto. Substitua
+'pela tag HTML &#44;
+
+O:NUMSOCS, Selecione o número de sócios que compõem a empresa
+O:NOME_SOCIO, Aqui&#44; você deve digitar o nome do sócio
+O:DINHEIRO,Digite aqui o valor
+O:DINHEIRO_EXTENSO,Campo preenchido automaticamente
+O:QUOTAS,Digite aqui o número de quotas
+O:QUOTAS_EXTENSO,Campo preenchido automaticamente
+O:ENDLOGR, Digite aqui o nome do logradouro (Rua Av&#44; Praça&#44; ...) do endereço da empresa
+O:ENDNUM, Digite aqui o número do endereço da empresa
+O:ENDBAIRRO, Digite aqui o bairro do endereço da empresa
+O:ENDCIDADE, Digite aqui a cidade do endereço da empresa
+O:ENDUF,Selecione aqui o Estado onde se encontra a empresa

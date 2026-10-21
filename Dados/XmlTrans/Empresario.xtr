@@ -1,0 +1,368 @@
+<XmlTransformation Version="1.0"><Transform Direction="ToCds"><SelectEach dest="DATAPACKET\ROWDATA\ROW" from="\empresas\empresarios\empresario"><Select dest="@nome" from="\nome"/><Select dest="@rg" from="\rg"/><Select dest="@estadocivil" from="\estadocivil"/><Select dest="@cpf" from="\cpf"/><Select dest="@regime" from="\regime"/></SelectEach></Transform><XmlSchema RootName="empresas"><![CDATA[<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="empresas" type="empresasType"/>
+  <xs:complexType name="empresasType">
+    <xs:sequence>
+      <xs:element name="empresa" type="empresaType"/>
+      <xs:element name="atividades" type="atividadesType"/>
+      <xs:element name="socios" type="sociosType"/>
+      <xs:element name="empresarios" type="empresariosType"/>
+      <xs:element name="diretoria" type="diretoriaType"/>
+      <xs:element name="consorciados" type="consorciadosType"/>
+      <xs:element name="filiais" type="filiaisType"/>
+      <xs:element name="bloqueios" type="bloqueiosType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="empresa" type="empresaType"/>
+  <xs:complexType name="empresaType">
+    <xs:sequence>
+      <xs:element name="metadados" type="metadadosType"/>
+      <xs:element name="protocolodae" type="protocolodaeType"/>
+      <xs:element name="codautenticacao" type="codautenticacaoType"/>
+      <xs:element name="datacertidao" type="datacertidaoType"/>
+      <xs:element name="nome" type="nomeType"/>
+      <xs:element name="natureza" type="naturezaType"/>
+      <xs:element name="nire" type="nireType"/>
+      <xs:element name="cnpj" type="cnpjType"/>
+      <xs:element name="data_arquivamento" type="data_arquivamentoType"/>
+      <xs:element name="data_inicio" type="data_inicioType"/>
+      <xs:element name="endereco" type="enderecoType"/>
+      <xs:element name="objeto" type="objetoType"/>
+      <xs:element name="capital" type="capitalType"/>
+      <xs:element name="capital_integralizado" type="capital_integralizadoType"/>
+      <xs:element name="microempresa" type="microempresaType"/>
+      <xs:element name="prazo" type="prazoType"/>
+      <xs:element name="situacao" type="situacaoType"/>
+      <xs:element name="status" type="statusType"/>
+      <xs:element name="dataArquivamentoconstituicao" type="dataArquivamentoconstituicaoType"/>
+      <xs:element name="datainicioatividade" type="datainicioatividadeType"/>
+      <xs:element name="ultarquivamento" type="ultarquivamentoType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="metadados" type="metadadosType"/>
+  <xs:complexType name="metadadosType">
+    <xs:sequence>
+      <xs:element name="bandageral" type="bandageralType"/>
+      <xs:element name="bandas" type="bandasType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="bandageral" type="bandageralType"/>
+  <xs:complexType name="bandageralType">
+    <xs:sequence>
+      <xs:element name="campos" type="camposType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="campos" type="camposType"/>
+  <xs:complexType name="camposType">
+    <xs:sequence>
+      <xs:element name="campo" type="campoType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="campo" type="campoType"/>
+  <xs:complexType name="campoType">
+    <xs:sequence>
+      <xs:element name="nomecampo" type="nomecampoType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="nomecampo" type="nomecampoType"/>
+  <xs:simpleType name="nomecampoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="bandas" type="bandasType"/>
+  <xs:complexType name="bandasType">
+    <xs:sequence>
+      <xs:element name="banda" type="bandaType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="banda" type="bandaType"/>
+  <xs:complexType name="bandaType">
+    <xs:sequence>
+      <xs:element name="nome" type="nomeType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="nome" type="nomeType"/>
+  <xs:simpleType name="nomeType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="protocolodae" type="protocolodaeType"/>
+  <xs:simpleType name="protocolodaeType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="codautenticacao" type="codautenticacaoType"/>
+  <xs:simpleType name="codautenticacaoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="datacertidao" type="datacertidaoType"/>
+  <xs:simpleType name="datacertidaoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="nome" type="nomeType"/>
+  <xs:simpleType name="nomeType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="natureza" type="naturezaType"/>
+  <xs:simpleType name="naturezaType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="nire" type="nireType"/>
+  <xs:simpleType name="nireType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="cnpj" type="cnpjType"/>
+  <xs:simpleType name="cnpjType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="data_arquivamento" type="data_arquivamentoType"/>
+  <xs:simpleType name="data_arquivamentoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="data_inicio" type="data_inicioType"/>
+  <xs:simpleType name="data_inicioType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="endereco" type="enderecoType"/>
+  <xs:simpleType name="enderecoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="objeto" type="objetoType"/>
+  <xs:simpleType name="objetoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="capital" type="capitalType"/>
+  <xs:simpleType name="capitalType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="capital_integralizado" type="capital_integralizadoType"/>
+  <xs:simpleType name="capital_integralizadoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="microempresa" type="microempresaType"/>
+  <xs:simpleType name="microempresaType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="prazo" type="prazoType"/>
+  <xs:simpleType name="prazoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="situacao" type="situacaoType"/>
+  <xs:simpleType name="situacaoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="status" type="statusType"/>
+  <xs:simpleType name="statusType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="dataArquivamentoconstituicao" type="dataArquivamentoconstituicaoType"/>
+  <xs:simpleType name="dataArquivamentoconstituicaoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="datainicioatividade" type="datainicioatividadeType"/>
+  <xs:simpleType name="datainicioatividadeType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="ultarquivamento" type="ultarquivamentoType"/>
+  <xs:complexType name="ultarquivamentoType">
+    <xs:sequence>
+      <xs:element name="ultarqdata" type="ultarqdataType"/>
+      <xs:element name="ultarqnumero" type="ultarqnumeroType"/>
+      <xs:element name="ultarato" type="ultaratoType"/>
+      <xs:element name="eventos" type="eventosType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ultarqdata" type="ultarqdataType"/>
+  <xs:simpleType name="ultarqdataType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="ultarqnumero" type="ultarqnumeroType"/>
+  <xs:simpleType name="ultarqnumeroType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="ultarato" type="ultaratoType"/>
+  <xs:simpleType name="ultaratoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="eventos" type="eventosType"/>
+  <xs:complexType name="eventosType">
+    <xs:sequence>
+      <xs:element name="evento" type="eventoType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="evento" type="eventoType"/>
+  <xs:complexType name="eventoType">
+    <xs:sequence>
+      <xs:element name="nomeevento" type="nomeeventoType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="nomeevento" type="nomeeventoType"/>
+  <xs:simpleType name="nomeeventoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="atividades" type="atividadesType"/>
+  <xs:complexType name="atividadesType">
+    <xs:sequence>
+      <xs:element name="atividade" type="atividadeType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="atividade" type="atividadeType"/>
+  <xs:complexType name="atividadeType">
+    <xs:sequence>
+      <xs:element name="codigo" type="codigoType"/>
+      <xs:element name="nome" type="nomeType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="codigo" type="codigoType"/>
+  <xs:simpleType name="codigoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="nome" type="nomeType"/>
+  <xs:simpleType name="nomeType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="socios" type="sociosType"/>
+  <xs:complexType name="sociosType">
+    <xs:sequence>
+      <xs:element name="socio" type="socioType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="socio" type="socioType"/>
+  <xs:complexType name="socioType">
+    <xs:sequence>
+      <xs:element name="nome" type="nomeType"/>
+      <xs:element name="cpf" type="cpfType"/>
+      <xs:element name="participacao" type="participacaoType"/>
+      <xs:element name="especie" type="especieType"/>
+      <xs:element name="administrador" type="administradorType"/>
+      <xs:element name="termino" type="terminoType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="nome" type="nomeType"/>
+  <xs:simpleType name="nomeType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="cpf" type="cpfType"/>
+  <xs:simpleType name="cpfType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="participacao" type="participacaoType"/>
+  <xs:simpleType name="participacaoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="especie" type="especieType"/>
+  <xs:simpleType name="especieType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="administrador" type="administradorType"/>
+  <xs:simpleType name="administradorType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="termino" type="terminoType"/>
+  <xs:simpleType name="terminoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="empresarios" type="empresariosType"/>
+  <xs:complexType name="empresariosType">
+    <xs:sequence>
+      <xs:element name="empresario" type="empresarioType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="empresario" type="empresarioType"/>
+  <xs:complexType name="empresarioType">
+    <xs:sequence>
+      <xs:element name="nome" type="nomeType"/>
+      <xs:element name="rg" type="rgType"/>
+      <xs:element name="estadocivil" type="estadocivilType"/>
+      <xs:element name="cpf" type="cpfType"/>
+      <xs:element name="regime" type="regimeType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="nome" type="nomeType"/>
+  <xs:simpleType name="nomeType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="rg" type="rgType"/>
+  <xs:simpleType name="rgType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="estadocivil" type="estadocivilType"/>
+  <xs:simpleType name="estadocivilType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="cpf" type="cpfType"/>
+  <xs:simpleType name="cpfType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="regime" type="regimeType"/>
+  <xs:simpleType name="regimeType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="diretoria" type="diretoriaType"/>
+  <xs:complexType name="diretoriaType">
+    <xs:sequence>
+      <xs:element name="diretor" type="diretorType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="diretor" type="diretorType"/>
+  <xs:complexType name="diretorType">
+    <xs:sequence>
+      <xs:element name="nome" type="nomeType"/>
+      <xs:element name="cpf" type="cpfType"/>
+      <xs:element name="termino" type="terminoType"/>
+      <xs:element name="cargo" type="cargoType"/>
+      <xs:element name="vinculo" type="vinculoType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="nome" type="nomeType"/>
+  <xs:simpleType name="nomeType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="cpf" type="cpfType"/>
+  <xs:simpleType name="cpfType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="termino" type="terminoType"/>
+  <xs:simpleType name="terminoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="cargo" type="cargoType"/>
+  <xs:simpleType name="cargoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="vinculo" type="vinculoType"/>
+  <xs:simpleType name="vinculoType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="consorciados" type="consorciadosType"/>
+  <xs:simpleType name="consorciadosType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="filiais" type="filiaisType"/>
+  <xs:complexType name="filiaisType">
+    <xs:sequence>
+      <xs:element name="filial" type="filialType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="filial" type="filialType"/>
+  <xs:complexType name="filialType">
+    <xs:sequence>
+      <xs:element name="nirefilial" type="nirefilialType"/>
+      <xs:element name="cnpjfilial" type="cnpjfilialType"/>
+      <xs:element name="enderecofilial" type="enderecofilialType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="nirefilial" type="nirefilialType"/>
+  <xs:simpleType name="nirefilialType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="cnpjfilial" type="cnpjfilialType"/>
+  <xs:simpleType name="cnpjfilialType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="enderecofilial" type="enderecofilialType"/>
+  <xs:simpleType name="enderecofilialType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:element name="bloqueios" type="bloqueiosType"/>
+  <xs:simpleType name="bloqueiosType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+</xs:schema>]]></XmlSchema><CdsSkeleton/><XslTransform/><Skeleton><![CDATA[<?xml version="1.0"?><DATAPACKET Version="2.0"><METADATA><FIELDS><FIELD attrname="nome" fieldtype="string" WIDTH="100"/><FIELD attrname="rg" fieldtype="string" WIDTH="30"/><FIELD attrname="estadocivil" fieldtype="string" WIDTH="100"/><FIELD attrname="cpf" fieldtype="string" WIDTH="11"/><FIELD attrname="regime" fieldtype="string" WIDTH="100"/></FIELDS><PARAMS/></METADATA><ROWDATA/><METADATA><FIELDS><FIELD attrname="nome" fieldtype="string" WIDTH="100"/><FIELD attrname="rg" fieldtype="string" WIDTH="30"/><FIELD attrname="estadocivil" fieldtype="string" WIDTH="100"/><FIELD attrname="cpf" fieldtype="string" WIDTH="11"/><FIELD attrname="regime" fieldtype="string" WIDTH="100"/></FIELDS><PARAMS/></METADATA><ROWDATA/></DATAPACKET>
+]]></Skeleton></XmlTransformation>
